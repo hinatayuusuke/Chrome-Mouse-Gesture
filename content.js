@@ -1,39 +1,89 @@
-const SETTINGS = {
-  minDistance: 12,
-  cancelRadius: 24,
-  lineWidth: 4,
-  trailColors: {
-    normal: "#ff3b30",
-    link: "#1e90ff",
-    text: "#2ecc71"
+const STORAGE_KEY = "gestureMasterConfig";
+
+const DEFAULT_CONFIG = {
+  settings: {
+    minDistance: 12,
+    cancelRadius: 24,
+    lineWidth: 4,
+    trailOpacity: 0.85,
+    angleTolerance: 35,
+    dragAllowDiagonal: false,
+    trailColors: {
+      normal: "#ff3b30",
+      link: "#1e90ff",
+      text: "#2ecc71",
+      image: "#f59e0b"
+    },
+    previewOffset: { x: 14, y: 16 }
   },
-  previewOffset: { x: 14, y: 16 }
+  gestures: {
+    L: { action: "historyBack", label: "戻る" },
+    R: { action: "historyForward", label: "進む" },
+    URDL: { action: "reload", label: "更新" },
+    U: { action: "scrollTop", label: "トップへ" },
+    D: { action: "scrollBottom", label: "ボトムへ" },
+    DR: { action: "closeTab", label: "タブを閉じる" },
+    DU: { action: "reopenTab", label: "閉じたタブを開く" },
+    RU: { action: "newTab", label: "新しいタブ" },
+    RR: { action: "moveTabRight", label: "タブを右へ" },
+    LL: { action: "moveTabLeft", label: "タブを左へ" }
+  },
+  dragGestures: {
+    link: {
+      U: "openLinkActive",
+      D: "openLinkBackground",
+      L: "copyLinkUrl",
+      R: "copyLinkText"
+    },
+    text: {
+      R: "searchGoogle"
+    },
+    image: {
+      U: "openImageActive",
+      D: "openImageBackground",
+      L: "copyImageUrl",
+      R: ""
+    }
+  },
+  exclusions: []
 };
 
-// ジェスチャーごとの動作定義
-const ACTIONS = {
-  normal: {
-    L: { label: "戻る", action: { type: "historyBack" } },
-    R: { label: "進む", action: { type: "historyForward" } },
-    URDL: { label: "更新", action: { type: "reload" } },
-    U: { label: "トップへ", action: { type: "scrollTop" } },
-    D: { label: "ボトムへ", action: { type: "scrollBottom" } },
-    DR: { label: "タブを閉じる", action: { type: "closeTab" } },
-    DU: { label: "閉じたタブを開く", action: { type: "reopenTab" } },
-    RU: { label: "新しいタブ", action: { type: "newTab" } },
-    RR: { label: "タブを右へ", action: { type: "moveTabRight" } },
-    LL: { label: "タブを左へ", action: { type: "moveTabLeft" } }
-  },
-  link: {
-    U: { label: "新規タブ(前面)", action: { type: "openLink", active: true } },
-    D: { label: "新規タブ(背面)", action: { type: "openLink", active: false } },
-    L: { label: "URLをコピー", action: { type: "copyLinkUrl" } },
-    R: { label: "テキストをコピー", action: { type: "copyLinkText" } }
-  },
-  text: {
-    R: { label: "Google検索", action: { type: "searchGoogle" } }
-  }
+const ACTION_DEFS = {
+  historyBack: { label: "戻る", action: { type: "historyBack" } },
+  historyForward: { label: "進む", action: { type: "historyForward" } },
+  reload: { label: "更新", action: { type: "reload" } },
+  scrollTop: { label: "トップへ", action: { type: "scrollTop" } },
+  scrollBottom: { label: "ボトムへ", action: { type: "scrollBottom" } },
+  closeTab: { label: "タブを閉じる", action: { type: "closeTab" } },
+  reopenTab: { label: "閉じたタブを開く", action: { type: "reopenTab" } },
+  newTab: { label: "新しいタブ", action: { type: "newTab" } },
+  moveTabLeft: { label: "タブを左へ", action: { type: "moveTabLeft" } },
+  moveTabRight: { label: "タブを右へ", action: { type: "moveTabRight" } },
+  openLinkActive: { label: "新規タブ(前面)", action: { type: "openLink", active: true } },
+  openLinkBackground: { label: "新規タブ(背面)", action: { type: "openLink", active: false } },
+  copyLinkUrl: { label: "URLをコピー", action: { type: "copyLinkUrl" } },
+  copyLinkText: { label: "テキストをコピー", action: { type: "copyLinkText" } },
+  searchGoogle: { label: "Google検索", action: { type: "searchGoogle" } },
+  openImageActive: { label: "画像を新規タブ(前面)", action: { type: "openImage", active: true } },
+  openImageBackground: { label: "画像を新規タブ(背面)", action: { type: "openImage", active: false } },
+  copyImageUrl: { label: "画像URLをコピー", action: { type: "copyImageUrl" } }
 };
+
+const SETTINGS = {
+  minDistance: DEFAULT_CONFIG.settings.minDistance,
+  cancelRadius: DEFAULT_CONFIG.settings.cancelRadius,
+  lineWidth: DEFAULT_CONFIG.settings.lineWidth,
+  trailOpacity: DEFAULT_CONFIG.settings.trailOpacity,
+  angleTolerance: DEFAULT_CONFIG.settings.angleTolerance,
+  dragAllowDiagonal: DEFAULT_CONFIG.settings.dragAllowDiagonal,
+  trailColors: { ...DEFAULT_CONFIG.settings.trailColors },
+  previewOffset: { ...DEFAULT_CONFIG.settings.previewOffset }
+};
+
+let config = deepClone(DEFAULT_CONFIG);
+let actionMap = buildActionMap(config);
+let exclusionMatchers = [];
+let gesturesEnabled = true;
 
 const state = {
   active: false,
@@ -50,7 +100,8 @@ const state = {
   path: [],
   linkUrl: "",
   linkText: "",
-  selectionText: ""
+  selectionText: "",
+  imageUrl: ""
 };
 
 let blockNextClick = false;
@@ -58,6 +109,9 @@ let suppressContextMenu = false;
 let canvas = null;
 let ctx = null;
 let preview = null;
+
+loadConfig();
+listenForConfigUpdates();
 
 // 入力イベントの監視を開始する
 document.addEventListener("mousedown", onMouseDown, true);
@@ -71,6 +125,10 @@ window.addEventListener("resize", onResize, true);
 
 // 押下開始時にジェスチャー種別を決定する
 function onMouseDown(event) {
+  if (!gesturesEnabled) {
+    return;
+  }
+
   if (event.button === 2) {
     startGesture("normal", event, {});
     return;
@@ -85,6 +143,14 @@ function onMouseDown(event) {
     startGesture("link", event, {
       linkUrl: link.href,
       linkText: link.textContent || link.href
+    });
+    return;
+  }
+
+  const image = findImageElement(event.target);
+  if (image) {
+    startGesture("image", event, {
+      imageUrl: image.currentSrc || image.src
     });
     return;
   }
@@ -121,7 +187,8 @@ function onMouseMove(event) {
     return;
   }
 
-  const direction = getDirection(segmentDx, segmentDy);
+  const allowDiagonal = SETTINGS.dragAllowDiagonal && state.type !== "normal";
+  const direction = getDirection(segmentDx, segmentDy, allowDiagonal);
   if (direction && state.path[state.path.length - 1] !== direction) {
     state.path.push(direction);
     updatePreviewText();
@@ -156,7 +223,7 @@ function onMouseUp(event) {
 
   if (shouldExecute) {
     const executed = executeAction(state.type, key);
-    if (executed && (state.type === "link" || state.type === "text")) {
+    if (executed && (state.type === "link" || state.type === "text" || state.type === "image")) {
       blockNextClick = true;
     }
   }
@@ -222,6 +289,7 @@ function startGesture(type, event, context) {
   state.linkUrl = context.linkUrl || "";
   state.linkText = context.linkText || "";
   state.selectionText = context.selectionText || "";
+  state.imageUrl = context.imageUrl || "";
 
   setTrailStyle(type);
   clearTrail();
@@ -239,6 +307,7 @@ function endGesture() {
   state.linkUrl = "";
   state.linkText = "";
   state.selectionText = "";
+  state.imageUrl = "";
   state.hasMoved = false;
   state.cancelled = false;
 
@@ -298,10 +367,18 @@ function executeAction(type, key) {
         return true;
       }
       return false;
+    case "openImage":
+      if (state.imageUrl) {
+        sendMessage({ type: "openTab", url: state.imageUrl, active: action.active });
+        return true;
+      }
+      return false;
     case "copyLinkUrl":
       return copyToClipboard(state.linkUrl);
     case "copyLinkText":
       return copyToClipboard(state.linkText);
+    case "copyImageUrl":
+      return copyToClipboard(state.imageUrl);
     case "searchGoogle": {
       const text = state.selectionText.trim();
       if (!text) {
@@ -317,7 +394,7 @@ function executeAction(type, key) {
 }
 
 function getActionEntry(type, key) {
-  const map = ACTIONS[type];
+  const map = actionMap[type];
   return map ? map[key] : null;
 }
 
@@ -329,11 +406,58 @@ function sendMessage(message) {
 }
 
 // 方向を上下左右の1文字に変換する
-function getDirection(dx, dy) {
-  if (Math.abs(dx) >= Math.abs(dy)) {
+function getDirection(dx, dy, allowDiagonal) {
+  const absX = Math.abs(dx);
+  const absY = Math.abs(dy);
+  if (absX === 0 && absY === 0) {
+    return null;
+  }
+
+  const angle = normalizeAngle((Math.atan2(dy, dx) * 180) / Math.PI);
+
+  if (allowDiagonal) {
+    const sector = Math.round(angle / 45) % 8;
+    switch (sector) {
+      case 0:
+        return "R";
+      case 1:
+        return "DR";
+      case 2:
+        return "D";
+      case 3:
+        return "DL";
+      case 4:
+        return "L";
+      case 5:
+        return "UL";
+      case 6:
+        return "U";
+      case 7:
+        return "UR";
+      default:
+        return null;
+    }
+  }
+
+  const axis = absX >= absY ? (dx >= 0 ? 0 : 180) : dy >= 0 ? 90 : 270;
+  const tolerance = typeof SETTINGS.angleTolerance === "number" ? SETTINGS.angleTolerance : 45;
+  if (angleDiff(angle, axis) > tolerance) {
+    return null;
+  }
+
+  if (absX >= absY) {
     return dx >= 0 ? "R" : "L";
   }
   return dy >= 0 ? "D" : "U";
+}
+
+function normalizeAngle(angle) {
+  return (angle + 360) % 360;
+}
+
+function angleDiff(a, b) {
+  const diff = Math.abs(a - b) % 360;
+  return diff > 180 ? 360 - diff : diff;
 }
 
 function findLinkElement(target) {
@@ -341,6 +465,17 @@ function findLinkElement(target) {
     return null;
   }
   return target.closest("a[href]");
+}
+
+function findImageElement(target) {
+  if (!target || !target.closest) {
+    return null;
+  }
+  const image = target.closest("img");
+  if (image && image.src) {
+    return image;
+  }
+  return null;
 }
 
 function getSelectionText() {
@@ -412,6 +547,7 @@ function setTrailStyle(type) {
   ctx.lineWidth = SETTINGS.lineWidth;
   ctx.lineCap = "round";
   ctx.strokeStyle = SETTINGS.trailColors[type] || SETTINGS.trailColors.normal;
+  ctx.globalAlpha = SETTINGS.trailOpacity;
 }
 
 // マウスの軌跡を描画する
@@ -515,4 +651,143 @@ function fallbackCopy(text) {
   const ok = document.execCommand("copy");
   document.body.removeChild(textarea);
   return ok;
+}
+
+function loadConfig() {
+  if (!chrome || !chrome.storage || !chrome.storage.local) {
+    return;
+  }
+  chrome.storage.local.get(STORAGE_KEY, (data) => {
+    applyConfig(data[STORAGE_KEY]);
+  });
+}
+
+function listenForConfigUpdates() {
+  if (!chrome || !chrome.storage || !chrome.storage.onChanged) {
+    return;
+  }
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== "local" || !changes[STORAGE_KEY]) {
+      return;
+    }
+    applyConfig(changes[STORAGE_KEY].newValue);
+  });
+}
+
+function applyConfig(stored) {
+  config = mergeConfig(DEFAULT_CONFIG, stored);
+  Object.assign(SETTINGS, config.settings);
+  SETTINGS.trailColors = {
+    ...DEFAULT_CONFIG.settings.trailColors,
+    ...(config.settings ? config.settings.trailColors : {})
+  };
+  SETTINGS.previewOffset = {
+    ...DEFAULT_CONFIG.settings.previewOffset,
+    ...(config.settings ? config.settings.previewOffset : {})
+  };
+  actionMap = buildActionMap(config);
+  exclusionMatchers = compileExclusions(config.exclusions || []);
+  updateEnabledState();
+}
+
+function buildActionMap(source) {
+  const map = { normal: {}, link: {}, text: {}, image: {} };
+  Object.entries(source.gestures || {}).forEach(([key, gesture]) => {
+    const def = ACTION_DEFS[gesture.action];
+    if (!def) {
+      return;
+    }
+    const label = typeof gesture.label === "string" && gesture.label.trim() ? gesture.label.trim() : def.label;
+    map.normal[key] = { label, action: def.action };
+  });
+
+  ["link", "text", "image"].forEach((context) => {
+    const contextMap = (source.dragGestures || {})[context] || {};
+    Object.entries(contextMap).forEach(([dir, actionKey]) => {
+      if (!actionKey) {
+        return;
+      }
+      const def = ACTION_DEFS[actionKey];
+      if (!def) {
+        return;
+      }
+      map[context][dir] = { label: def.label, action: def.action };
+    });
+  });
+
+  return map;
+}
+
+function updateEnabledState() {
+  gesturesEnabled = !isExcludedUrl(window.location.href);
+  if (!gesturesEnabled && state.active) {
+    endGesture();
+  }
+}
+
+function isExcludedUrl(url) {
+  return exclusionMatchers.some((matcher) => matcher.test(url));
+}
+
+function compileExclusions(exclusions) {
+  return exclusions
+    .map((entry) => normalizeExclusion(entry))
+    .filter(Boolean)
+    .map((entry) => patternToRegExp(entry))
+    .filter(Boolean);
+}
+
+function normalizeExclusion(entry) {
+  if (!entry || typeof entry !== "string") {
+    return "";
+  }
+  const value = entry.trim();
+  if (!value) {
+    return "";
+  }
+  if (!value.includes("://") && !value.includes("/")) {
+    return `*://${value}/*`;
+  }
+  return value;
+}
+
+function patternToRegExp(pattern) {
+  try {
+    const escaped = pattern.replace(/[.+?^${}()|[\]\\*]/g, "\\$&");
+    const regexString = `^${escaped.replace(/\\\*/g, ".*")}$`;
+    return new RegExp(regexString, "i");
+  } catch (error) {
+    return null;
+  }
+}
+
+function deepClone(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function mergeConfig(defaults, stored) {
+  if (!stored || typeof stored !== "object") {
+    return deepClone(defaults);
+  }
+  const merged = deepClone(defaults);
+  return mergeDeep(merged, stored);
+}
+
+function mergeDeep(target, source) {
+  Object.keys(source || {}).forEach((key) => {
+    const sourceValue = source[key];
+    if (Array.isArray(sourceValue)) {
+      target[key] = sourceValue.slice();
+      return;
+    }
+    if (sourceValue && typeof sourceValue === "object") {
+      if (!target[key] || typeof target[key] !== "object") {
+        target[key] = {};
+      }
+      mergeDeep(target[key], sourceValue);
+      return;
+    }
+    target[key] = sourceValue;
+  });
+  return target;
 }
