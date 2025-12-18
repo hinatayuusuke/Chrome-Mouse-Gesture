@@ -65,6 +65,7 @@ const ACTION_DEFS = {
   copyLinkUrl: { label: "URLをコピー", action: { type: "copyLinkUrl" } },
   copyLinkText: { label: "テキストをコピー", action: { type: "copyLinkText" } },
   searchGoogle: { label: "Google検索", action: { type: "searchGoogle" } },
+  copySelectionText: { label: "選択テキストをコピー", action: { type: "copySelectionText" } },
   openImageActive: { label: "画像を新規タブ(前面)", action: { type: "openImage", active: true } },
   openImageBackground: { label: "画像を新規タブ(背面)", action: { type: "openImage", active: false } },
   openImageIncognito: { label: "画像をシークレットで開く", action: { type: "openImageIncognito" } },
@@ -426,6 +427,8 @@ function executeAction(type, key, context) {
       sendMessage({ type: "openTab", url, active: true });
       return true;
     }
+    case "copySelectionText":
+      return copyToClipboard((context.selectionText || "").trim());
     default:
       return false;
   }
