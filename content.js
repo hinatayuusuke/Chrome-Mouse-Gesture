@@ -106,14 +106,16 @@ const state = {
 
 let blockNextClick = false;
 let suppressContextMenu = false;
-let canvas = null;
-let ctx = null;
-let preview = null;
+const overlay = createGestureOverlay();
+const moveScheduler = {
+  ticking: false,
+  pendingX: 0,
+  pendingY: 0
+};
 
-loadConfig();
-listenForConfigUpdates();
+startConfigSync();
 
-// 入力イベントの監視を開始する
+// mousemove は頻度が高いので、描画と判定は rAF にまとめて負荷を抑える
 document.addEventListener("mousedown", onMouseDown, true);
 document.addEventListener("mousemove", onMouseMove, true);
 document.addEventListener("mouseup", onMouseUp, true);
@@ -167,10 +169,24 @@ function onMouseMove(event) {
     return;
   }
 
-  const x = event.clientX;
-  const y = event.clientY;
+  moveScheduler.pendingX = event.clientX;
+  moveScheduler.pendingY = event.clientY;
+  if (moveScheduler.ticking) {
+    return;
+  }
+  moveScheduler.ticking = true;
+  window.requestAnimationFrame(() => {
+    moveScheduler.ticking = false;
+    processMouseMove(moveScheduler.pendingX, moveScheduler.pendingY);
+  });
+}
 
-  drawTrail(state.lastX, state.lastY, x, y);
+function processMouseMove(x, y) {
+  if (!state.active) {
+    return;
+  }
+
+  overlay.drawTrail(state.lastX, state.lastY, x, y);
   state.lastX = x;
   state.lastY = y;
 
@@ -183,7 +199,7 @@ function onMouseMove(event) {
   }
 
   if (segmentDistance < SETTINGS.minDistance) {
-    updatePreviewPosition(x, y);
+    overlay.updatePreviewPosition(x, y);
     return;
   }
 
@@ -209,7 +225,7 @@ function onMouseMove(event) {
     suppressContextMenu = true;
   }
 
-  updatePreviewPosition(x, y);
+  overlay.updatePreviewPosition(x, y);
 }
 
 // ボタンを離したら最終判定を行う
@@ -222,7 +238,8 @@ function onMouseUp(event) {
   const shouldExecute = state.hasMoved && key && !state.cancelled;
 
   if (shouldExecute) {
-    const executed = executeAction(state.type, key);
+    // 終了処理で状態を初期化する前に、アクション実行に必要な情報だけ退避する
+    const executed = executeAction(state.type, key, getActionContext());
     if (executed && (state.type === "link" || state.type === "text" || state.type === "image")) {
       blockNextClick = true;
     }
@@ -265,14 +282,12 @@ function onKeyDown(event) {
 
 // 表示領域の変化に追従する
 function onResize() {
-  if (canvas) {
-    resizeCanvas();
-  }
+  overlay.resize();
 }
 
 // ジェスチャーを開始する
 function startGesture(type, event, context) {
-  ensureOverlay();
+  overlay.ensure();
 
   state.active = true;
   state.type = type;
@@ -291,9 +306,9 @@ function startGesture(type, event, context) {
   state.selectionText = context.selectionText || "";
   state.imageUrl = context.imageUrl || "";
 
-  setTrailStyle(type);
-  clearTrail();
-  hidePreview();
+  overlay.setTrailStyle(type);
+  overlay.clearTrail();
+  overlay.hidePreview();
 }
 
 // ジェスチャーを終了して状態をリセットする
@@ -311,8 +326,8 @@ function endGesture() {
   state.hasMoved = false;
   state.cancelled = false;
 
-  clearTrail();
-  hidePreview();
+  overlay.clearTrail();
+  overlay.hidePreview();
 
   if (keepSuppressMenu) {
     // コンテキストメニューの発火タイミングに合わせて少しだけ保持する
@@ -322,8 +337,17 @@ function endGesture() {
   }
 }
 
+function getActionContext() {
+  return {
+    linkUrl: state.linkUrl,
+    linkText: state.linkText,
+    selectionText: state.selectionText,
+    imageUrl: state.imageUrl
+  };
+}
+
 // 方向列に対応するアクションを実行する
-function executeAction(type, key) {
+function executeAction(type, key, context) {
   const entry = getActionEntry(type, key);
   if (!entry) {
     return false;
@@ -362,25 +386,25 @@ function executeAction(type, key) {
       sendMessage({ type: "moveTab", direction: "right" });
       return true;
     case "openLink":
-      if (state.linkUrl) {
-        sendMessage({ type: "openTab", url: state.linkUrl, active: action.active });
+      if (context.linkUrl) {
+        sendMessage({ type: "openTab", url: context.linkUrl, active: action.active });
         return true;
       }
       return false;
     case "openImage":
-      if (state.imageUrl) {
-        sendMessage({ type: "openTab", url: state.imageUrl, active: action.active });
+      if (context.imageUrl) {
+        sendMessage({ type: "openTab", url: context.imageUrl, active: action.active });
         return true;
       }
       return false;
     case "copyLinkUrl":
-      return copyToClipboard(state.linkUrl);
+      return copyToClipboard(context.linkUrl);
     case "copyLinkText":
-      return copyToClipboard(state.linkText);
+      return copyToClipboard(context.linkText);
     case "copyImageUrl":
-      return copyToClipboard(state.imageUrl);
+      return copyToClipboard(context.imageUrl);
     case "searchGoogle": {
-      const text = state.selectionText.trim();
+      const text = (context.selectionText || "").trim();
       if (!text) {
         return false;
       }
@@ -398,11 +422,12 @@ function getActionEntry(type, key) {
   return map ? map[key] : null;
 }
 
-// バックグラウンドへメッセージを送る
+// タブ操作はコンテンツ側から直接できないためバックグラウンド経由にする
 function sendMessage(message) {
-  if (chrome && chrome.runtime && chrome.runtime.sendMessage) {
-    chrome.runtime.sendMessage(message);
+  if (typeof chrome === "undefined" || !chrome.runtime || !chrome.runtime.sendMessage) {
+    return;
   }
+  chrome.runtime.sendMessage(message);
 }
 
 // 方向を上下左右の1文字に変換する
@@ -493,113 +518,128 @@ function getDocumentBottom() {
   );
 }
 
-// 画面上に描画用レイヤーを準備する
-function ensureOverlay() {
-  if (!canvas) {
-    canvas = document.createElement("canvas");
-    canvas.style.position = "fixed";
-    canvas.style.left = "0";
-    canvas.style.top = "0";
-    canvas.style.pointerEvents = "none";
-    canvas.style.zIndex = "2147483647";
-    canvas.style.width = "100%";
-    canvas.style.height = "100%";
-    document.documentElement.appendChild(canvas);
-    ctx = canvas.getContext("2d");
+// 画面への常駐要素を必要時のみ生成し、通常の閲覧体験への影響を最小化する
+function createGestureOverlay() {
+  let canvas = null;
+  let ctx = null;
+  let preview = null;
+
+  function ensure() {
+    if (!canvas) {
+      canvas = document.createElement("canvas");
+      canvas.style.position = "fixed";
+      canvas.style.left = "0";
+      canvas.style.top = "0";
+      canvas.style.pointerEvents = "none";
+      canvas.style.zIndex = "2147483647";
+      canvas.style.width = "100%";
+      canvas.style.height = "100%";
+      document.documentElement.appendChild(canvas);
+      ctx = canvas.getContext("2d");
+    }
+
+    if (!preview) {
+      preview = document.createElement("div");
+      preview.style.position = "fixed";
+      preview.style.pointerEvents = "none";
+      preview.style.zIndex = "2147483647";
+      preview.style.padding = "6px 10px";
+      preview.style.borderRadius = "10px";
+      preview.style.background = "rgba(0, 0, 0, 0.75)";
+      preview.style.color = "#fff";
+      preview.style.fontSize = "12px";
+      preview.style.fontFamily = "sans-serif";
+      preview.style.whiteSpace = "nowrap";
+      preview.style.display = "none";
+      document.documentElement.appendChild(preview);
+    }
+
+    resize();
   }
 
-  if (!preview) {
-    preview = document.createElement("div");
-    preview.style.position = "fixed";
-    preview.style.pointerEvents = "none";
-    preview.style.zIndex = "2147483647";
-    preview.style.padding = "6px 10px";
-    preview.style.borderRadius = "10px";
-    preview.style.background = "rgba(0, 0, 0, 0.75)";
-    preview.style.color = "#fff";
-    preview.style.fontSize = "12px";
-    preview.style.fontFamily = "sans-serif";
-    preview.style.whiteSpace = "nowrap";
-    preview.style.display = "none";
-    document.documentElement.appendChild(preview);
+  function resize() {
+    if (!canvas || !ctx) {
+      return;
+    }
+
+    // 高DPI 環境でも線の太さと座標を一致させたい
+    const ratio = window.devicePixelRatio || 1;
+    canvas.width = Math.floor(window.innerWidth * ratio);
+    canvas.height = Math.floor(window.innerHeight * ratio);
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
   }
 
-  resizeCanvas();
-}
-
-// 高DPIでも崩れないように補正する
-function resizeCanvas() {
-  if (!canvas || !ctx) {
-    return;
+  function setTrailStyle(type) {
+    if (!ctx) {
+      return;
+    }
+    ctx.lineWidth = SETTINGS.lineWidth;
+    ctx.lineCap = "round";
+    ctx.strokeStyle = SETTINGS.trailColors[type] || SETTINGS.trailColors.normal;
+    ctx.globalAlpha = SETTINGS.trailOpacity;
   }
 
-  const ratio = window.devicePixelRatio || 1;
-  canvas.width = Math.floor(window.innerWidth * ratio);
-  canvas.height = Math.floor(window.innerHeight * ratio);
-  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-}
-
-// ジェスチャー種別に応じて線の色を切り替える
-function setTrailStyle(type) {
-  if (!ctx) {
-    return;
+  function drawTrail(fromX, fromY, toX, toY) {
+    if (!ctx) {
+      return;
+    }
+    ctx.beginPath();
+    ctx.moveTo(fromX, fromY);
+    ctx.lineTo(toX, toY);
+    ctx.stroke();
   }
-  ctx.lineWidth = SETTINGS.lineWidth;
-  ctx.lineCap = "round";
-  ctx.strokeStyle = SETTINGS.trailColors[type] || SETTINGS.trailColors.normal;
-  ctx.globalAlpha = SETTINGS.trailOpacity;
-}
 
-// マウスの軌跡を描画する
-function drawTrail(fromX, fromY, toX, toY) {
-  if (!ctx) {
-    return;
+  function clearTrail() {
+    if (!ctx || !canvas) {
+      return;
+    }
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
   }
-  ctx.beginPath();
-  ctx.moveTo(fromX, fromY);
-  ctx.lineTo(toX, toY);
-  ctx.stroke();
-}
 
-// 描画済みの線を消去する
-function clearTrail() {
-  if (!ctx || !canvas) {
-    return;
+  function setPreviewText(text) {
+    if (!preview) {
+      return;
+    }
+    if (!text) {
+      preview.style.display = "none";
+      preview.textContent = "";
+      return;
+    }
+    preview.textContent = text;
+    preview.style.display = "block";
   }
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  function updatePreviewPosition(x, y) {
+    if (!preview || preview.style.display === "none") {
+      return;
+    }
+    preview.style.left = `${x + SETTINGS.previewOffset.x}px`;
+    preview.style.top = `${y + SETTINGS.previewOffset.y}px`;
+  }
+
+  function hidePreview() {
+    if (preview) {
+      preview.style.display = "none";
+      preview.textContent = "";
+    }
+  }
+
+  return {
+    ensure,
+    resize,
+    setTrailStyle,
+    drawTrail,
+    clearTrail,
+    setPreviewText,
+    updatePreviewPosition,
+    hidePreview
+  };
 }
 
 // プレビュー表示を更新する
 function updatePreviewText(forcedText) {
-  if (!preview) {
-    return;
-  }
-
   const text = forcedText || (state.cancelled ? "キャンセル" : getPreviewLabel());
-  if (!text) {
-    preview.style.display = "none";
-    return;
-  }
-
-  preview.textContent = text;
-  preview.style.display = "block";
-}
-
-// プレビューをカーソル付近に移動する
-function updatePreviewPosition(x, y) {
-  if (!preview || preview.style.display === "none") {
-    return;
-  }
-  preview.style.left = `${x + SETTINGS.previewOffset.x}px`;
-  preview.style.top = `${y + SETTINGS.previewOffset.y}px`;
-}
-
-// プレビューを非表示にする
-function hidePreview() {
-  if (preview) {
-    preview.style.display = "none";
-    preview.textContent = "";
-  }
+  overlay.setPreviewText(text);
 }
 
 // 現在の方向列から表示文言を決定する
@@ -653,19 +693,19 @@ function fallbackCopy(text) {
   return ok;
 }
 
-function loadConfig() {
-  if (!chrome || !chrome.storage || !chrome.storage.local) {
+function startConfigSync() {
+  if (typeof chrome === "undefined" || !chrome.storage || !chrome.storage.local) {
     return;
   }
+
   chrome.storage.local.get(STORAGE_KEY, (data) => {
     applyConfig(data[STORAGE_KEY]);
   });
-}
 
-function listenForConfigUpdates() {
-  if (!chrome || !chrome.storage || !chrome.storage.onChanged) {
+  if (!chrome.storage.onChanged) {
     return;
   }
+
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== "local" || !changes[STORAGE_KEY]) {
       return;

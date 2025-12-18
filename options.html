@@ -207,6 +207,24 @@
       </div>
     </div>
 
+    <template id="gesture-card-template">
+      <div class="gesture-card">
+        <div class="gesture-path" data-part="path"></div>
+        <div>
+          <div class="gesture-title" data-part="title"></div>
+          <div class="gesture-meta" data-part="meta"></div>
+        </div>
+        <div class="gesture-actions">
+          <button class="button ghost" data-action="edit">編集</button>
+          <button class="button ghost" data-action="delete">削除</button>
+        </div>
+      </div>
+    </template>
+
+    <template id="path-chip-template">
+      <span class="path-chip"></span>
+    </template>
+
     <script src="options.js"></script>
   </body>
 </html>
