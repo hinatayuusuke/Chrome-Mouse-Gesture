@@ -59,11 +59,13 @@ const ACTION_CATALOG = [
   { id: "moveTabRight", label: "タブを右へ移動", group: "tab" },
   { id: "openLinkActive", label: "リンクを新しいタブで開く (前面)", group: "link" },
   { id: "openLinkBackground", label: "リンクを新しいタブで開く (背面)", group: "link" },
+  { id: "openLinkIncognito", label: "リンクをシークレットウィンドウで開く", group: "link" },
   { id: "copyLinkUrl", label: "リンクURLをコピー", group: "link" },
   { id: "copyLinkText", label: "リンクテキストをコピー", group: "link" },
   { id: "searchGoogle", label: "選択テキストをGoogle検索", group: "text" },
   { id: "openImageActive", label: "画像を新しいタブで開く (前面)", group: "image" },
   { id: "openImageBackground", label: "画像を新しいタブで開く (背面)", group: "image" },
+  { id: "openImageIncognito", label: "画像をシークレットウィンドウで開く", group: "image" },
   { id: "copyImageUrl", label: "画像URLをコピー", group: "image" }
 ];
 
@@ -90,9 +92,9 @@ const NORMAL_ACTION_IDS = [
 ];
 
 const DRAG_ACTION_IDS = {
-  link: ["openLinkActive", "openLinkBackground", "copyLinkUrl", "copyLinkText"],
+  link: ["openLinkActive", "openLinkBackground", "openLinkIncognito", "copyLinkUrl", "copyLinkText"],
   text: ["searchGoogle"],
-  image: ["openImageActive", "openImageBackground", "copyImageUrl"]
+  image: ["openImageActive", "openImageBackground", "openImageIncognito", "copyImageUrl"]
 };
 
 const ACTION_LABELS = ACTION_CATALOG.reduce((map, action) => {
@@ -116,6 +118,8 @@ const elements = {
   saveStatus: document.getElementById("save-status"),
   gestureList: document.getElementById("gesture-list"),
   gestureEmpty: document.getElementById("gesture-empty"),
+  gestureCardTemplate: document.getElementById("gesture-card-template"),
+  pathChipTemplate: document.getElementById("path-chip-template"),
   addGestureTop: document.getElementById("add-gesture-top"),
   addGestureFab: document.getElementById("add-gesture-fab"),
   dragDiagonal: document.getElementById("drag-diagonal"),
@@ -392,7 +396,7 @@ function renderAll() {
 function renderGestureCards() {
   const entries = Object.entries(state.config.gestures || {});
   entries.sort((a, b) => a[0].length - b[0].length || a[0].localeCompare(b[0]));
-  elements.gestureList.innerHTML = "";
+  elements.gestureList.replaceChildren();
 
   if (entries.length === 0) {
     elements.gestureEmpty.style.display = "block";
@@ -401,32 +405,49 @@ function renderGestureCards() {
   elements.gestureEmpty.style.display = "none";
 
   entries.forEach(([key, gesture]) => {
-    const card = document.createElement("div");
-    card.className = "gesture-card";
-    const title = gesture.label || ACTION_LABELS[gesture.action] || "未設定";
-    const meta = ACTION_LABELS[gesture.action] || gesture.action || "";
-    card.innerHTML = `
-      <div class="gesture-path">${renderPathChips(key)}</div>
-      <div>
-        <div class="gesture-title">${escapeHtml(title)}</div>
-        <div class="gesture-meta">${escapeHtml(meta)}</div>
-      </div>
-      <div class="gesture-actions">
-        <button class="button ghost" data-action="edit">編集</button>
-        <button class="button ghost" data-action="delete">削除</button>
-      </div>
-    `;
-    card.querySelector('[data-action="edit"]').addEventListener("click", () => openGestureModal(key));
-    card.querySelector('[data-action="delete"]').addEventListener("click", () => removeGesture(key));
+    const card = createGestureCard(key, gesture);
     elements.gestureList.appendChild(card);
   });
 }
 
-function renderPathChips(key) {
-  return key
-    .split("")
-    .map((char) => `<span class="path-chip">${directionLabel(char)}</span>`)
-    .join("");
+function createGestureCard(key, gesture) {
+  // JS 文字列でDOMを組むと、構造変更とサニタイズの両方が負債になりやすい
+  if (!(elements.gestureCardTemplate instanceof HTMLTemplateElement)) {
+    throw new Error("gesture-card-template が見つかりません");
+  }
+  if (!(elements.pathChipTemplate instanceof HTMLTemplateElement)) {
+    throw new Error("path-chip-template が見つかりません");
+  }
+
+  const card = elements.gestureCardTemplate.content.firstElementChild.cloneNode(true);
+  const title = gesture.label || ACTION_LABELS[gesture.action] || "未設定";
+  const meta = ACTION_LABELS[gesture.action] || gesture.action || "";
+
+  const path = card.querySelector('[data-part="path"]');
+  const titleNode = card.querySelector('[data-part="title"]');
+  const metaNode = card.querySelector('[data-part="meta"]');
+  if (!path || !titleNode || !metaNode) {
+    throw new Error("gesture-card-template の構造が想定と異なります");
+  }
+
+  path.replaceChildren(createPathChips(key));
+  titleNode.textContent = title;
+  metaNode.textContent = meta;
+
+  card.querySelector('[data-action="edit"]').addEventListener("click", () => openGestureModal(key));
+  card.querySelector('[data-action="delete"]').addEventListener("click", () => removeGesture(key));
+
+  return card;
+}
+
+function createPathChips(key) {
+  const fragment = document.createDocumentFragment();
+  key.split("").forEach((char) => {
+    const chip = elements.pathChipTemplate.content.firstElementChild.cloneNode(true);
+    chip.textContent = directionLabel(char);
+    fragment.appendChild(chip);
+  });
+  return fragment;
 }
 
 function directionLabel(char) {
@@ -653,7 +674,7 @@ function renderVisualSettings() {
 }
 
 function renderExclusions() {
-  elements.exclusionList.innerHTML = "";
+  elements.exclusionList.replaceChildren();
   if (!state.config.exclusions || state.config.exclusions.length === 0) {
     elements.exclusionEmpty.style.display = "block";
     return;
@@ -702,7 +723,7 @@ function drawPreviewLine(from, to) {
 }
 
 function buildActionSelect(select, allowedIds) {
-  select.innerHTML = "";
+  select.replaceChildren();
   const none = document.createElement("option");
   none.value = "";
   none.textContent = "未設定";
@@ -734,6 +755,7 @@ function scheduleSave(force) {
     saveConfig();
     return;
   }
+  // スライダー操作などで連続更新されるので、保存はまとめてI/Oを減らす
   setStatus("保存状態: 変更中...");
   if (state.saveTimer) {
     clearTimeout(state.saveTimer);
@@ -791,19 +813,6 @@ function getCanvasPoint(canvas, event) {
     x: event.clientX - rect.left,
     y: event.clientY - rect.top
   };
-}
-
-function escapeHtml(value) {
-  return String(value).replace(/[&<>"']/g, (char) => {
-    const map = {
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;"
-    };
-    return map[char] || char;
-  });
 }
 
 function deepClone(value) {

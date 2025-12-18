@@ -31,6 +31,12 @@ chrome.runtime.onMessage.addListener((message, sender) => {
       }
       break;
     }
+    case "openTabIncognito": {
+      if (typeof message.url === "string" && message.url) {
+        openUrlInIncognitoWindow(message.url, message.active !== false);
+      }
+      break;
+    }
     case "moveTab": {
       if (sender.tab) {
         moveTabInWindow(sender.tab, message.direction);
@@ -41,6 +47,25 @@ chrome.runtime.onMessage.addListener((message, sender) => {
       break;
   }
 });
+
+function openUrlInIncognitoWindow(url, focus) {
+  // 既存のシークレットウィンドウを優先して使い、増殖を避ける
+  chrome.windows.getAll({}, (windows) => {
+    const incognitoWindow = Array.isArray(windows) ? windows.find((win) => win && win.incognito) : null;
+
+    if (incognitoWindow && typeof incognitoWindow.id === "number") {
+      chrome.tabs.create({ windowId: incognitoWindow.id, url, active: focus });
+      return;
+    }
+
+    chrome.windows.create({ url, incognito: true, focused: focus }, () => {
+      // シークレット許可が無い場合に備え、例外ではなく失敗として扱う
+      if (chrome.runtime.lastError) {
+        console.warn("Failed to open incognito window:", chrome.runtime.lastError.message);
+      }
+    });
+  });
+}
 
 // 現在のタブを左右に移動する
 function moveTabInWindow(tab, direction) {
