@@ -63,6 +63,7 @@ const ACTION_CATALOG = [
   { id: "copyLinkUrl", label: "リンクURLをコピー", group: "link" },
   { id: "copyLinkText", label: "リンクテキストをコピー", group: "link" },
   { id: "searchGoogle", label: "選択テキストをGoogle検索", group: "text" },
+  { id: "copySelectionText", label: "選択テキストをコピー", group: "text" },
   { id: "openImageActive", label: "画像を新しいタブで開く (前面)", group: "image" },
   { id: "openImageBackground", label: "画像を新しいタブで開く (背面)", group: "image" },
   { id: "openImageIncognito", label: "画像をシークレットウィンドウで開く", group: "image" },
@@ -93,7 +94,7 @@ const NORMAL_ACTION_IDS = [
 
 const DRAG_ACTION_IDS = {
   link: ["openLinkActive", "openLinkBackground", "openLinkIncognito", "copyLinkUrl", "copyLinkText"],
-  text: ["searchGoogle"],
+  text: ["searchGoogle", "copySelectionText"],
   image: ["openImageActive", "openImageBackground", "openImageIncognito", "copyImageUrl"]
 };
 
