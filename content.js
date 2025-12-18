@@ -61,11 +61,13 @@ const ACTION_DEFS = {
   moveTabRight: { label: "タブを右へ", action: { type: "moveTabRight" } },
   openLinkActive: { label: "新規タブ(前面)", action: { type: "openLink", active: true } },
   openLinkBackground: { label: "新規タブ(背面)", action: { type: "openLink", active: false } },
+  openLinkIncognito: { label: "シークレットで開く", action: { type: "openLinkIncognito" } },
   copyLinkUrl: { label: "URLをコピー", action: { type: "copyLinkUrl" } },
   copyLinkText: { label: "テキストをコピー", action: { type: "copyLinkText" } },
   searchGoogle: { label: "Google検索", action: { type: "searchGoogle" } },
   openImageActive: { label: "画像を新規タブ(前面)", action: { type: "openImage", active: true } },
   openImageBackground: { label: "画像を新規タブ(背面)", action: { type: "openImage", active: false } },
+  openImageIncognito: { label: "画像をシークレットで開く", action: { type: "openImageIncognito" } },
   copyImageUrl: { label: "画像URLをコピー", action: { type: "copyImageUrl" } }
 };
 
@@ -391,9 +393,21 @@ function executeAction(type, key, context) {
         return true;
       }
       return false;
+    case "openLinkIncognito":
+      if (context.linkUrl) {
+        sendMessage({ type: "openTabIncognito", url: context.linkUrl, active: true });
+        return true;
+      }
+      return false;
     case "openImage":
       if (context.imageUrl) {
         sendMessage({ type: "openTab", url: context.imageUrl, active: action.active });
+        return true;
+      }
+      return false;
+    case "openImageIncognito":
+      if (context.imageUrl) {
+        sendMessage({ type: "openTabIncognito", url: context.imageUrl, active: true });
         return true;
       }
       return false;

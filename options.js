@@ -59,11 +59,13 @@ const ACTION_CATALOG = [
   { id: "moveTabRight", label: "タブを右へ移動", group: "tab" },
   { id: "openLinkActive", label: "リンクを新しいタブで開く (前面)", group: "link" },
   { id: "openLinkBackground", label: "リンクを新しいタブで開く (背面)", group: "link" },
+  { id: "openLinkIncognito", label: "リンクをシークレットウィンドウで開く", group: "link" },
   { id: "copyLinkUrl", label: "リンクURLをコピー", group: "link" },
   { id: "copyLinkText", label: "リンクテキストをコピー", group: "link" },
   { id: "searchGoogle", label: "選択テキストをGoogle検索", group: "text" },
   { id: "openImageActive", label: "画像を新しいタブで開く (前面)", group: "image" },
   { id: "openImageBackground", label: "画像を新しいタブで開く (背面)", group: "image" },
+  { id: "openImageIncognito", label: "画像をシークレットウィンドウで開く", group: "image" },
   { id: "copyImageUrl", label: "画像URLをコピー", group: "image" }
 ];
 
@@ -90,9 +92,9 @@ const NORMAL_ACTION_IDS = [
 ];
 
 const DRAG_ACTION_IDS = {
-  link: ["openLinkActive", "openLinkBackground", "copyLinkUrl", "copyLinkText"],
+  link: ["openLinkActive", "openLinkBackground", "openLinkIncognito", "copyLinkUrl", "copyLinkText"],
   text: ["searchGoogle"],
-  image: ["openImageActive", "openImageBackground", "copyImageUrl"]
+  image: ["openImageActive", "openImageBackground", "openImageIncognito", "copyImageUrl"]
 };
 
 const ACTION_LABELS = ACTION_CATALOG.reduce((map, action) => {
