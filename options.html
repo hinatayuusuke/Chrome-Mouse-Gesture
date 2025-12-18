@@ -49,10 +49,16 @@
               <h1>スーパードラッグ</h1>
               <p>リンクやテキストを掴んで投げる方向で動作を切り替えます。</p>
             </div>
-            <label class="toggle">
-              <input type="checkbox" id="drag-diagonal" />
-              <span>斜め方向も有効にする</span>
-            </label>
+            <div class="toggle-stack">
+              <label class="toggle">
+                <input type="checkbox" id="drag-diagonal" />
+                <span>斜め方向も有効にする</span>
+              </label>
+              <label class="toggle">
+                <input type="checkbox" id="drag-native" />
+                <span>ネイティブドラッグ方式に切り替える（ページ外ドロップはChrome標準）</span>
+              </label>
+            </div>
           </div>
           <div class="tab-bar" id="drag-tabs">
             <button class="tab is-active" data-drag-tab="link">リンク</button>

@@ -8,6 +8,7 @@ const DEFAULT_CONFIG = {
     trailOpacity: 0.85,
     angleTolerance: 35,
     dragAllowDiagonal: false,
+    dragNativeMode: false,
     trailColors: {
       normal: "#ff3b30",
       link: "#1e90ff",
@@ -79,6 +80,7 @@ const SETTINGS = {
   trailOpacity: DEFAULT_CONFIG.settings.trailOpacity,
   angleTolerance: DEFAULT_CONFIG.settings.angleTolerance,
   dragAllowDiagonal: DEFAULT_CONFIG.settings.dragAllowDiagonal,
+  dragNativeMode: DEFAULT_CONFIG.settings.dragNativeMode,
   trailColors: { ...DEFAULT_CONFIG.settings.trailColors },
   previewOffset: { ...DEFAULT_CONFIG.settings.previewOffset }
 };
@@ -104,7 +106,9 @@ const state = {
   linkUrl: "",
   linkText: "",
   selectionText: "",
-  imageUrl: ""
+  imageUrl: "",
+  nativeDrag: false,
+  dropInside: false
 };
 
 let blockNextClick = false;
@@ -124,6 +128,9 @@ document.addEventListener("mousemove", onMouseMove, true);
 document.addEventListener("mouseup", onMouseUp, true);
 document.addEventListener("contextmenu", onContextMenu, true);
 document.addEventListener("dragstart", onDragStart, true);
+document.addEventListener("dragover", onDragOver, true);
+document.addEventListener("drop", onDrop, true);
+document.addEventListener("dragend", onDragEnd, true);
 document.addEventListener("click", onClick, true);
 document.addEventListener("keydown", onKeyDown, true);
 window.addEventListener("resize", onResize, true);
@@ -140,6 +147,10 @@ function onMouseDown(event) {
   }
 
   if (event.button !== 0) {
+    return;
+  }
+
+  if (SETTINGS.dragNativeMode) {
     return;
   }
 
@@ -166,14 +177,13 @@ function onMouseDown(event) {
   }
 }
 
-// 移動量から方向列を生成する
-function onMouseMove(event) {
+function schedulePointerMove(x, y) {
   if (!state.active) {
     return;
   }
 
-  moveScheduler.pendingX = event.clientX;
-  moveScheduler.pendingY = event.clientY;
+  moveScheduler.pendingX = x;
+  moveScheduler.pendingY = y;
   if (moveScheduler.ticking) {
     return;
   }
@@ -182,6 +192,15 @@ function onMouseMove(event) {
     moveScheduler.ticking = false;
     processMouseMove(moveScheduler.pendingX, moveScheduler.pendingY);
   });
+}
+
+// 移動量から方向列を生成する
+function onMouseMove(event) {
+  if (!state.active) {
+    return;
+  }
+
+  schedulePointerMove(event.clientX, event.clientY);
 }
 
 function processMouseMove(x, y) {
@@ -237,6 +256,10 @@ function onMouseUp(event) {
     return;
   }
 
+  if (state.nativeDrag) {
+    return;
+  }
+
   const key = state.path.join("");
   const shouldExecute = state.hasMoved && key && !state.cancelled;
 
@@ -259,11 +282,132 @@ function onContextMenu(event) {
   }
 }
 
-// ブラウザのドラッグ開始を抑止する
 function onDragStart(event) {
+  if (!gesturesEnabled) {
+    return;
+  }
+
+  if (!SETTINGS.dragNativeMode) {
+    // 旧方式: ドラッグ開始を抑止して mousemove/mouseup で判定する
+    if (state.active) {
+      event.preventDefault();
+    }
+    return;
+  }
+
+  // 新方式: ネイティブドラッグを開始させ、ドロップ場所で動作を分ける
   if (state.active) {
+    return;
+  }
+
+  const info = getNativeDragGestureInfo(event);
+  if (!info) {
+    return;
+  }
+
+  startGesture(info.type, event, { ...info.context, nativeDrag: true });
+}
+
+function onDragOver(event) {
+  if (!state.active || !state.nativeDrag) {
+    return;
+  }
+
+  schedulePointerMove(event.clientX, event.clientY);
+
+  const minDistance = typeof SETTINGS.minDistance === "number" ? SETTINGS.minDistance : 12;
+  if (distanceBetween(state.startX, state.startY, event.clientX, event.clientY) >= minDistance) {
+    // ページ内ドロップ判定のために drop を有効化する
     event.preventDefault();
   }
+}
+
+function onDrop(event) {
+  if (!state.active || !state.nativeDrag) {
+    return;
+  }
+
+  state.dropInside = true;
+  processMouseMove(event.clientX, event.clientY);
+
+  const key = state.path.join("");
+  const shouldExecute = state.hasMoved && key && !state.cancelled;
+
+  if (state.hasMoved) {
+    // 既定のドロップ挙動（ナビゲーションなど）を抑止する
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  if (shouldExecute) {
+    const executed = executeAction(state.type, key, getActionContext());
+    if (executed && (state.type === "link" || state.type === "text" || state.type === "image")) {
+      blockNextClick = true;
+    }
+  }
+}
+
+function onDragEnd() {
+  if (!state.active || !state.nativeDrag) {
+    return;
+  }
+  // ページ外にドロップされた場合は drop が来ないため、ここでは何も実行せず終了だけ行う
+  endGesture();
+}
+
+function getNativeDragGestureInfo(event) {
+  const link = findLinkElement(event.target);
+  if (link) {
+    return {
+      type: "link",
+      context: {
+        linkUrl: link.href,
+        linkText: link.textContent || link.href
+      }
+    };
+  }
+
+  const image = findImageElement(event.target);
+  if (image) {
+    return {
+      type: "image",
+      context: {
+        imageUrl: image.currentSrc || image.src
+      }
+    };
+  }
+
+  const selectionText = getSelectionText();
+  if (selectionText && !isEditableTarget(event.target)) {
+    return {
+      type: "text",
+      context: { selectionText }
+    };
+  }
+
+  return null;
+}
+
+function isEditableTarget(target) {
+  if (!(target instanceof Element)) {
+    return false;
+  }
+
+  const host = target.closest("input, textarea, [contenteditable]");
+  if (!host) {
+    return false;
+  }
+
+  if (host instanceof HTMLTextAreaElement) {
+    return true;
+  }
+
+  if (host instanceof HTMLInputElement) {
+    const type = (host.type || "").toLowerCase();
+    return !["button", "checkbox", "radio", "submit", "reset", "file", "range", "color"].includes(type);
+  }
+
+  return host instanceof HTMLElement ? host.isContentEditable : false;
 }
 
 // ジェスチャー完了時のクリックを抑止する
@@ -294,7 +438,7 @@ function startGesture(type, event, context) {
 
   state.active = true;
   state.type = type;
-  state.button = event.button;
+  state.button = typeof event.button === "number" ? event.button : 0;
   state.startX = event.clientX;
   state.startY = event.clientY;
   state.lastX = event.clientX;
@@ -308,6 +452,8 @@ function startGesture(type, event, context) {
   state.linkText = context.linkText || "";
   state.selectionText = context.selectionText || "";
   state.imageUrl = context.imageUrl || "";
+  state.nativeDrag = !!context.nativeDrag;
+  state.dropInside = false;
 
   overlay.setTrailStyle(type);
   overlay.clearTrail();
@@ -326,6 +472,8 @@ function endGesture() {
   state.linkText = "";
   state.selectionText = "";
   state.imageUrl = "";
+  state.nativeDrag = false;
+  state.dropInside = false;
   state.hasMoved = false;
   state.cancelled = false;
 

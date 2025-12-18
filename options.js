@@ -7,6 +7,7 @@ const DEFAULT_CONFIG = {
     lineWidth: 4,
     trailOpacity: 0.85,
     dragAllowDiagonal: false,
+    dragNativeMode: false,
     trailColors: {
       normal: "#ff3b30",
       link: "#1e90ff",
@@ -124,6 +125,7 @@ const elements = {
   addGestureTop: document.getElementById("add-gesture-top"),
   addGestureFab: document.getElementById("add-gesture-fab"),
   dragDiagonal: document.getElementById("drag-diagonal"),
+  dragNative: document.getElementById("drag-native"),
   dragTabs: document.getElementById("drag-tabs"),
   dragPanels: document.querySelectorAll(".drag-panel"),
   directionPads: document.querySelectorAll(".direction-pad"),
@@ -225,6 +227,11 @@ function bindDragControls() {
     state.config.settings.dragAllowDiagonal = elements.dragDiagonal.checked;
     scheduleSave();
     renderDragPads();
+  });
+
+  elements.dragNative.addEventListener("change", () => {
+    state.config.settings.dragNativeMode = elements.dragNative.checked;
+    scheduleSave();
   });
 
   elements.dragTabs.addEventListener("click", (event) => {
@@ -600,6 +607,7 @@ function drawGestureLine(from, to) {
 
 function renderDragPads() {
   elements.dragDiagonal.checked = !!state.config.settings.dragAllowDiagonal;
+  elements.dragNative.checked = !!state.config.settings.dragNativeMode;
   elements.directionPads.forEach((pad) => {
     const context = pad.dataset.dragContext;
     if (!context) {
