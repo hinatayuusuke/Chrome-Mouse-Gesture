@@ -7,7 +7,7 @@ const DEFAULT_CONFIG = {
     lineWidth: 4,
     trailOpacity: 0.85,
     dragAllowDiagonal: false,
-    dragNativeMode: false,
+    dragNativeMode: true,
     trailColors: {
       normal: "#ff3b30",
       link: "#1e90ff",
