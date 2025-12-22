@@ -7,7 +7,7 @@ const DEFAULT_CONFIG = {
     lineWidth: 4,
     trailOpacity: 0.85,
     dragAllowDiagonal: false,
-    dragNativeMode: false,
+    dragNativeMode: true,
     trailColors: {
       normal: "#ff3b30",
       link: "#1e90ff",
@@ -24,8 +24,8 @@ const DEFAULT_CONFIG = {
     DR: { action: "closeTab", label: "タブを閉じる" },
     DU: { action: "reopenTab", label: "閉じたタブを開く" },
     RU: { action: "newTab", label: "新しいタブ" },
-    RR: { action: "moveTabRight", label: "タブを右へ" },
-    LL: { action: "moveTabLeft", label: "タブを左へ" }
+    UR: { action: "moveTabRight", label: "タブを右へ" },
+    UL: { action: "moveTabLeft", label: "タブを左へ" }
   },
   dragGestures: {
     link: {
