@@ -12,6 +12,7 @@
     {
       "matches": ["<all_urls>"],
       "js": [
+        "i18n.js",
         "content/constants.js",
         "content/state.js",
         "content/utils.js",

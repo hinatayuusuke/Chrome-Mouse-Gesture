@@ -2,6 +2,7 @@ const STORAGE_KEY = "gestureMasterConfig";
 
 const DEFAULT_CONFIG = {
   settings: {
+    language: getDefaultLanguage(),
     minDistance: 12,
     cancelRadius: 24,
     lineWidth: 4,
@@ -18,16 +19,16 @@ const DEFAULT_CONFIG = {
     previewOffset: { x: 14, y: 16 }
   },
   gestures: {
-    L: { action: "historyBack", label: "戻る" },
-    R: { action: "historyForward", label: "進む" },
-    URDL: { action: "reload", label: "更新" },
-    U: { action: "scrollTop", label: "トップへ" },
-    D: { action: "scrollBottom", label: "ボトムへ" },
-    DR: { action: "closeTab", label: "タブを閉じる" },
-    DU: { action: "reopenTab", label: "閉じたタブを開く" },
-    RU: { action: "newTab", label: "新しいタブ" },
-    UR: { action: "moveTabRight", label: "タブを右へ" },
-    UL: { action: "moveTabLeft", label: "タブを左へ" }
+    L: { action: "historyBack", label: "" },
+    R: { action: "historyForward", label: "" },
+    URDL: { action: "reload", label: "" },
+    U: { action: "scrollTop", label: "" },
+    D: { action: "scrollBottom", label: "" },
+    DR: { action: "closeTab", label: "" },
+    DU: { action: "reopenTab", label: "" },
+    RU: { action: "newTab", label: "" },
+    UR: { action: "moveTabRight", label: "" },
+    UL: { action: "moveTabLeft", label: "" }
   },
   dragGestures: {
     link: {
@@ -50,25 +51,25 @@ const DEFAULT_CONFIG = {
 };
 
 const ACTION_DEFS = {
-  historyBack: { label: "戻る", action: { type: "historyBack" } },
-  historyForward: { label: "進む", action: { type: "historyForward" } },
-  reload: { label: "更新", action: { type: "reload" } },
-  scrollTop: { label: "トップへ", action: { type: "scrollTop" } },
-  scrollBottom: { label: "ボトムへ", action: { type: "scrollBottom" } },
-  closeTab: { label: "タブを閉じる", action: { type: "closeTab" } },
-  reopenTab: { label: "閉じたタブを開く", action: { type: "reopenTab" } },
-  newTab: { label: "新しいタブ", action: { type: "newTab" } },
-  moveTabLeft: { label: "タブを左へ", action: { type: "moveTabLeft" } },
-  moveTabRight: { label: "タブを右へ", action: { type: "moveTabRight" } },
-  openLinkActive: { label: "新規タブ(前面)", action: { type: "openLink", active: true } },
-  openLinkBackground: { label: "新規タブ(背面)", action: { type: "openLink", active: false } },
-  openLinkIncognito: { label: "シークレットで開く", action: { type: "openLinkIncognito" } },
-  copyLinkUrl: { label: "URLをコピー", action: { type: "copyLinkUrl" } },
-  copyLinkText: { label: "テキストをコピー", action: { type: "copyLinkText" } },
-  searchGoogle: { label: "Google検索", action: { type: "searchGoogle" } },
-  copySelectionText: { label: "選択テキストをコピー", action: { type: "copySelectionText" } },
-  openImageActive: { label: "画像を新規タブ(前面)", action: { type: "openImage", active: true } },
-  openImageBackground: { label: "画像を新規タブ(背面)", action: { type: "openImage", active: false } },
-  openImageIncognito: { label: "画像をシークレットで開く", action: { type: "openImageIncognito" } },
-  copyImageUrl: { label: "画像URLをコピー", action: { type: "copyImageUrl" } }
+  historyBack: { action: { type: "historyBack" } },
+  historyForward: { action: { type: "historyForward" } },
+  reload: { action: { type: "reload" } },
+  scrollTop: { action: { type: "scrollTop" } },
+  scrollBottom: { action: { type: "scrollBottom" } },
+  closeTab: { action: { type: "closeTab" } },
+  reopenTab: { action: { type: "reopenTab" } },
+  newTab: { action: { type: "newTab" } },
+  moveTabLeft: { action: { type: "moveTabLeft" } },
+  moveTabRight: { action: { type: "moveTabRight" } },
+  openLinkActive: { action: { type: "openLink", active: true } },
+  openLinkBackground: { action: { type: "openLink", active: false } },
+  openLinkIncognito: { action: { type: "openLinkIncognito" } },
+  copyLinkUrl: { action: { type: "copyLinkUrl" } },
+  copyLinkText: { action: { type: "copyLinkText" } },
+  searchGoogle: { action: { type: "searchGoogle" } },
+  copySelectionText: { action: { type: "copySelectionText" } },
+  openImageActive: { action: { type: "openImage", active: true } },
+  openImageBackground: { action: { type: "openImage", active: false } },
+  openImageIncognito: { action: { type: "openImageIncognito" } },
+  copyImageUrl: { action: { type: "copyImageUrl" } }
 };

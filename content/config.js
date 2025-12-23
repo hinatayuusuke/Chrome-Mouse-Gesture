@@ -21,6 +21,8 @@ function startConfigSync() {
 
 function applyConfig(stored) {
   config = mergeConfig(DEFAULT_CONFIG, stored);
+  const language = normalizeLanguage(config.settings && config.settings.language) || getDefaultLanguage();
+  config.settings.language = language;
   Object.assign(SETTINGS, config.settings);
   SETTINGS.trailColors = {
     ...DEFAULT_CONFIG.settings.trailColors,

@@ -15,55 +15,74 @@
     <div class="app">
       <aside class="sidebar">
         <div class="brand">
-          <div class="brand-title">GestureMaster</div>
-          <div class="brand-sub">カスタマイズパネル</div>
+          <div class="brand-title" data-i18n="ui.brandTitle">GestureMaster</div>
+          <div class="brand-sub" data-i18n="ui.brandSub">カスタマイズパネル</div>
+        </div>
+        <div class="field">
+          <label for="language-select" data-i18n="ui.language.label">言語</label>
+          <select id="language-select">
+            <option value="ja" data-i18n="ui.language.ja">日本語</option>
+            <option value="en" data-i18n="ui.language.en">English</option>
+          </select>
         </div>
         <nav class="nav">
-          <button class="nav-item is-active" data-target="section-normal">ノーマルジェスチャー</button>
-          <button class="nav-item" data-target="section-drag">スーパードラッグ</button>
-          <button class="nav-item" data-target="section-visual">外観・感度</button>
-          <button class="nav-item" data-target="section-exclusions">除外リスト</button>
-          <button class="nav-item" data-target="section-transfer">インポート/エクスポート</button>
+          <button class="nav-item is-active" data-target="section-normal" data-i18n="ui.nav.normal">
+            ノーマルジェスチャー
+          </button>
+          <button class="nav-item" data-target="section-drag" data-i18n="ui.nav.drag">スーパードラッグ</button>
+          <button class="nav-item" data-target="section-visual" data-i18n="ui.nav.visual">外観・感度</button>
+          <button class="nav-item" data-target="section-exclusions" data-i18n="ui.nav.exclusions">除外リスト</button>
+          <button class="nav-item" data-target="section-transfer" data-i18n="ui.nav.transfer">
+            インポート/エクスポート
+          </button>
         </nav>
-        <div class="status" id="save-status">保存状態: 読み込み中...</div>
+        <div class="status" id="save-status">保存状況 読み込み中...</div>
       </aside>
       <main class="content">
         <section class="section is-active" id="section-normal">
           <div class="section-head">
             <div>
-              <h1>ノーマルジェスチャー</h1>
-              <p>右クリックの軌跡で実行する操作を登録します。</p>
+              <h1 data-i18n="ui.section.normal.title">ノーマルジェスチャー</h1>
+              <p data-i18n="ui.section.normal.description">
+                右クリックの軌跡で実行する操作を登録します。
+              </p>
             </div>
-            <button class="button primary" id="add-gesture-top">新規ジェスチャーを追加</button>
+            <button class="button primary" id="add-gesture-top" data-i18n="ui.section.normal.add">
+              新規ジェスチャーを追加
+            </button>
           </div>
           <div class="gesture-grid" id="gesture-list"></div>
-          <div class="empty-state" id="gesture-empty">
+          <div class="empty-state" id="gesture-empty" data-i18n="ui.section.normal.empty">
             まだジェスチャーがありません。右上のボタンから登録できます。
           </div>
-          <button class="fab" id="add-gesture-fab" aria-label="ジェスチャーを追加">+</button>
+          <button class="fab" id="add-gesture-fab" data-i18n-aria="ui.section.normal.fab">+</button>
         </section>
 
         <section class="section" id="section-drag">
           <div class="section-head">
             <div>
-              <h1>スーパードラッグ</h1>
-              <p>リンクやテキストを掴んで投げる方向で動作を切り替えます。</p>
+              <h1 data-i18n="ui.section.drag.title">スーパードラッグ</h1>
+              <p data-i18n="ui.section.drag.description">
+                リンクやテキストを掴んで投げる方向で動作を切り替えます。
+              </p>
             </div>
             <div class="toggle-stack">
               <label class="toggle">
                 <input type="checkbox" id="drag-diagonal" />
-                <span>斜め方向も有効にする</span>
+                <span data-i18n="ui.section.drag.diagonal">斜め方向も有効にする</span>
               </label>
               <label class="toggle">
                 <input type="checkbox" id="drag-native" />
-                <span>ネイティブドラッグ方式に切り替える（ページ外ドロップはChrome標準）</span>
+                <span data-i18n="ui.section.drag.native">
+                  ネイティブドラッグ方式に切り替える（ページ外ドロップはChrome標準）
+                </span>
               </label>
             </div>
           </div>
           <div class="tab-bar" id="drag-tabs">
-            <button class="tab is-active" data-drag-tab="link">リンク</button>
-            <button class="tab" data-drag-tab="text">テキスト</button>
-            <button class="tab" data-drag-tab="image">画像</button>
+            <button class="tab is-active" data-drag-tab="link" data-i18n="ui.section.drag.tab.link">リンク</button>
+            <button class="tab" data-drag-tab="text" data-i18n="ui.section.drag.tab.text">テキスト</button>
+            <button class="tab" data-drag-tab="image" data-i18n="ui.section.drag.tab.image">画像</button>
           </div>
           <div class="drag-panels">
             <div class="drag-panel is-active" data-drag-panel="link">
@@ -81,50 +100,50 @@
         <section class="section" id="section-visual">
           <div class="section-head">
             <div>
-              <h1>外観・感度</h1>
-              <p>ジェスチャーの線と判定感度を調整します。</p>
+              <h1 data-i18n="ui.section.visual.title">外観・感度</h1>
+              <p data-i18n="ui.section.visual.description">ジェスチャーの線と判定感度を調整します。</p>
             </div>
           </div>
           <div class="panel-grid">
             <div class="panel">
-              <h2>トレイル設定</h2>
+              <h2 data-i18n="ui.section.visual.trailTitle">トレイル設定</h2>
               <div class="field">
-                <label>ノーマル</label>
+                <label data-i18n="ui.section.visual.normal">ノーマル</label>
                 <input type="color" id="color-normal" />
               </div>
               <div class="field">
-                <label>リンク</label>
+                <label data-i18n="ui.section.visual.link">リンク</label>
                 <input type="color" id="color-link" />
               </div>
               <div class="field">
-                <label>テキスト</label>
+                <label data-i18n="ui.section.visual.text">テキスト</label>
                 <input type="color" id="color-text" />
               </div>
               <div class="field range">
-                <label>太さ</label>
+                <label data-i18n="ui.section.visual.width">太さ</label>
                 <input type="range" id="line-width" min="1" max="12" step="1" />
                 <span class="value" id="line-width-value"></span>
               </div>
               <div class="field range">
-                <label>透明度</label>
+                <label data-i18n="ui.section.visual.opacity">透明度</label>
                 <input type="range" id="trail-opacity" min="0.2" max="1" step="0.05" />
                 <span class="value" id="trail-opacity-value"></span>
               </div>
             </div>
             <div class="panel">
-              <h2>感度設定</h2>
+              <h2 data-i18n="ui.section.visual.sensitivityTitle">感度設定</h2>
               <div class="field range">
-                <label>最小認識距離</label>
+                <label data-i18n="ui.section.visual.minDistance">最小認識距離</label>
                 <input type="range" id="min-distance" min="4" max="36" step="1" />
                 <span class="value" id="min-distance-value"></span>
               </div>
               <div class="field range">
-                <label>判定許容角度</label>
+                <label data-i18n="ui.section.visual.angle">判定許容角度</label>
                 <input type="range" id="angle-tolerance" min="15" max="60" step="1" />
                 <span class="value" id="angle-tolerance-value"></span>
               </div>
               <div class="preview">
-                <div class="preview-label">リアルタイムプレビュー</div>
+                <div class="preview-label" data-i18n="ui.section.visual.preview">リアルタイムプレビュー</div>
                 <canvas id="trail-preview"></canvas>
               </div>
             </div>
@@ -134,42 +153,55 @@
         <section class="section" id="section-exclusions">
           <div class="section-head">
             <div>
-              <h1>除外リスト</h1>
-              <p>指定したサイトではジェスチャーが無効になります。</p>
+              <h1 data-i18n="ui.section.exclusions.title">除外リスト</h1>
+              <p data-i18n="ui.section.exclusions.description">指定したサイトではジェスチャーが無効になります。</p>
             </div>
           </div>
           <div class="panel">
             <div class="field horizontal">
-              <input type="text" id="exclusion-input" placeholder="example.com または https://example.com/*" />
-              <button class="button primary" id="exclusion-add">追加</button>
+              <input
+                type="text"
+                id="exclusion-input"
+                placeholder="example.com または https://example.com/*"
+                data-i18n-placeholder="ui.section.exclusions.placeholder"
+              />
+              <button class="button primary" id="exclusion-add" data-i18n="ui.section.exclusions.add">追加</button>
             </div>
-            <div class="hint">ワイルドカード * が使えます。</div>
+            <div class="hint" data-i18n="ui.section.exclusions.hint">ワイルドカード * が使えます。</div>
             <ul class="list" id="exclusion-list"></ul>
-            <div class="empty-state" id="exclusion-empty">除外サイトはまだありません。</div>
+            <div class="empty-state" id="exclusion-empty" data-i18n="ui.section.exclusions.empty">
+              除外サイトはまだありません。
+            </div>
           </div>
         </section>
 
         <section class="section" id="section-transfer">
           <div class="section-head">
             <div>
-              <h1>インポート/エクスポート</h1>
-              <p>設定をバックアップしたり共有できます。</p>
+              <h1 data-i18n="ui.section.transfer.title">インポート/エクスポート</h1>
+              <p data-i18n="ui.section.transfer.description">設定をバックアップしたり共有できます。</p>
             </div>
           </div>
           <div class="panel-grid">
             <div class="panel">
-              <h2>エクスポート</h2>
-              <p class="muted">現在の設定をJSONとして保存します。</p>
-              <button class="button primary" id="export-btn">エクスポート</button>
+              <h2 data-i18n="ui.section.transfer.exportTitle">エクスポート</h2>
+              <p class="muted" data-i18n="ui.section.transfer.exportDescription">
+                現在の設定をJSONとして保存します。
+              </p>
+              <button class="button primary" id="export-btn" data-i18n="ui.section.transfer.exportButton">
+                エクスポート
+              </button>
             </div>
             <div class="panel">
-              <h2>インポート</h2>
-              <p class="muted">JSONファイルを読み込みます。</p>
+              <h2 data-i18n="ui.section.transfer.importTitle">インポート</h2>
+              <p class="muted" data-i18n="ui.section.transfer.importDescription">JSONファイルを読み込みます。</p>
               <label class="button ghost file-label">
-                ファイルを選択
+                <span data-i18n="ui.section.transfer.chooseFile">ファイルを選択</span>
                 <input type="file" id="import-input" accept="application/json" />
               </label>
-              <button class="button danger" id="reset-btn">初期設定に戻す</button>
+              <button class="button danger" id="reset-btn" data-i18n="ui.section.transfer.reset">
+                初期設定に戻す
+              </button>
             </div>
           </div>
         </section>
@@ -181,34 +213,39 @@
       <div class="modal-card" role="dialog" aria-modal="true">
         <div class="modal-head">
           <h2 id="modal-title">ジェスチャーを追加</h2>
-          <button class="icon-button" data-close-modal aria-label="閉じる">×</button>
+          <button class="icon-button" data-close-modal data-i18n-aria="ui.modal.close" aria-label="閉じる">×</button>
         </div>
         <div class="modal-body">
           <div class="recording">
             <div class="recording-info">
-              <span>描画エリア</span>
+              <span data-i18n="ui.modal.drawArea">描画エリア</span>
               <span class="path-display" id="gesture-path">未入力</span>
             </div>
             <canvas id="gesture-canvas"></canvas>
             <div class="recording-actions">
-              <button class="button ghost" id="gesture-clear">クリア</button>
+              <button class="button ghost" id="gesture-clear" data-i18n="ui.modal.clear">クリア</button>
             </div>
           </div>
           <div class="form-grid">
             <label class="field">
-              <span>アクション</span>
+              <span data-i18n="ui.modal.action">アクション</span>
               <select id="gesture-action"></select>
             </label>
             <label class="field">
-              <span>ラベル (任意)</span>
-              <input type="text" id="gesture-label" placeholder="画面に表示する名称" />
+              <span data-i18n="ui.modal.label">ラベル (任意)</span>
+              <input
+                type="text"
+                id="gesture-label"
+                placeholder="画面に表示する名称"
+                data-i18n-placeholder="ui.modal.labelPlaceholder"
+              />
             </label>
           </div>
           <div class="error" id="gesture-error"></div>
         </div>
         <div class="modal-foot">
-          <button class="button ghost" data-close-modal>キャンセル</button>
-          <button class="button primary" id="gesture-save">保存</button>
+          <button class="button ghost" data-close-modal data-i18n="ui.modal.cancel">キャンセル</button>
+          <button class="button primary" id="gesture-save" data-i18n="ui.modal.save">保存</button>
         </div>
       </div>
     </div>
@@ -221,8 +258,8 @@
           <div class="gesture-meta" data-part="meta"></div>
         </div>
         <div class="gesture-actions">
-          <button class="button ghost" data-action="edit">編集</button>
-          <button class="button ghost" data-action="delete">削除</button>
+          <button class="button ghost" data-action="edit" data-i18n="ui.template.edit">編集</button>
+          <button class="button ghost" data-action="delete" data-i18n="ui.template.delete">削除</button>
         </div>
       </div>
     </template>
@@ -231,6 +268,7 @@
       <span class="path-chip"></span>
     </template>
 
+    <script src="i18n.js"></script>
     <script src="options.js"></script>
   </body>
 </html>
