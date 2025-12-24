@@ -2,6 +2,7 @@ const STORAGE_KEY = "gestureMasterConfig";
 
 const DEFAULT_CONFIG = {
   settings: {
+    language: getDefaultLanguage(),
     minDistance: 12,
     angleTolerance: 35,
     lineWidth: 4,
@@ -16,16 +17,16 @@ const DEFAULT_CONFIG = {
     }
   },
   gestures: {
-    L: { action: "historyBack", label: "戻る" },
-    R: { action: "historyForward", label: "進む" },
-    URDL: { action: "reload", label: "更新" },
-    U: { action: "scrollTop", label: "トップへ" },
-    D: { action: "scrollBottom", label: "ボトムへ" },
-    DR: { action: "closeTab", label: "タブを閉じる" },
-    DU: { action: "reopenTab", label: "閉じたタブを開く" },
-    RU: { action: "newTab", label: "新しいタブ" },
-    UR: { action: "moveTabRight", label: "タブを右へ" },
-    UL: { action: "moveTabLeft", label: "タブを左へ" }
+    L: { action: "historyBack", label: "" },
+    R: { action: "historyForward", label: "" },
+    URDL: { action: "reload", label: "" },
+    U: { action: "scrollTop", label: "" },
+    D: { action: "scrollBottom", label: "" },
+    DR: { action: "closeTab", label: "" },
+    DU: { action: "reopenTab", label: "" },
+    RU: { action: "newTab", label: "" },
+    UR: { action: "moveTabRight", label: "" },
+    UL: { action: "moveTabLeft", label: "" }
   },
   dragGestures: {
     link: {
@@ -48,37 +49,28 @@ const DEFAULT_CONFIG = {
 };
 
 const ACTION_CATALOG = [
-  { id: "historyBack", label: "戻る", group: "navigation" },
-  { id: "historyForward", label: "進む", group: "navigation" },
-  { id: "reload", label: "更新", group: "navigation" },
-  { id: "scrollTop", label: "ページトップへ", group: "other" },
-  { id: "scrollBottom", label: "ページ最下部へ", group: "other" },
-  { id: "closeTab", label: "タブを閉じる", group: "tab" },
-  { id: "reopenTab", label: "閉じたタブを復元", group: "tab" },
-  { id: "newTab", label: "新しいタブ", group: "tab" },
-  { id: "moveTabLeft", label: "タブを左へ移動", group: "tab" },
-  { id: "moveTabRight", label: "タブを右へ移動", group: "tab" },
-  { id: "openLinkActive", label: "リンクを新しいタブで開く (前面)", group: "link" },
-  { id: "openLinkBackground", label: "リンクを新しいタブで開く (背面)", group: "link" },
-  { id: "openLinkIncognito", label: "リンクをシークレットウィンドウで開く", group: "link" },
-  { id: "copyLinkUrl", label: "リンクURLをコピー", group: "link" },
-  { id: "copyLinkText", label: "リンクテキストをコピー", group: "link" },
-  { id: "searchGoogle", label: "選択テキストをGoogle検索", group: "text" },
-  { id: "copySelectionText", label: "選択テキストをコピー", group: "text" },
-  { id: "openImageActive", label: "画像を新しいタブで開く (前面)", group: "image" },
-  { id: "openImageBackground", label: "画像を新しいタブで開く (背面)", group: "image" },
-  { id: "openImageIncognito", label: "画像をシークレットウィンドウで開く", group: "image" },
-  { id: "copyImageUrl", label: "画像URLをコピー", group: "image" }
+  { id: "historyBack", group: "navigation" },
+  { id: "historyForward", group: "navigation" },
+  { id: "reload", group: "navigation" },
+  { id: "scrollTop", group: "other" },
+  { id: "scrollBottom", group: "other" },
+  { id: "closeTab", group: "tab" },
+  { id: "reopenTab", group: "tab" },
+  { id: "newTab", group: "tab" },
+  { id: "moveTabLeft", group: "tab" },
+  { id: "moveTabRight", group: "tab" },
+  { id: "openLinkActive", group: "link" },
+  { id: "openLinkBackground", group: "link" },
+  { id: "openLinkIncognito", group: "link" },
+  { id: "copyLinkUrl", group: "link" },
+  { id: "copyLinkText", group: "link" },
+  { id: "searchGoogle", group: "text" },
+  { id: "copySelectionText", group: "text" },
+  { id: "openImageActive", group: "image" },
+  { id: "openImageBackground", group: "image" },
+  { id: "openImageIncognito", group: "image" },
+  { id: "copyImageUrl", group: "image" }
 ];
-
-const ACTION_GROUP_LABELS = {
-  navigation: "ナビゲーション",
-  tab: "タブ操作",
-  other: "その他",
-  link: "リンク操作",
-  text: "テキスト操作",
-  image: "画像操作"
-};
 
 const NORMAL_ACTION_IDS = [
   "historyBack",
@@ -99,13 +91,10 @@ const DRAG_ACTION_IDS = {
   image: ["openImageActive", "openImageBackground", "openImageIncognito", "copyImageUrl"]
 };
 
-const ACTION_LABELS = ACTION_CATALOG.reduce((map, action) => {
-  map[action.id] = action.label;
-  return map;
-}, {});
-
 const state = {
   config: deepClone(DEFAULT_CONFIG),
+  language: getDefaultLanguage(),
+  statusKey: "ui.status.loading",
   saveTimer: null,
   modal: {
     open: false,
@@ -118,6 +107,7 @@ const elements = {
   navItems: document.querySelectorAll(".nav-item"),
   sections: document.querySelectorAll(".section"),
   saveStatus: document.getElementById("save-status"),
+  languageSelect: document.getElementById("language-select"),
   gestureList: document.getElementById("gesture-list"),
   gestureEmpty: document.getElementById("gesture-empty"),
   gestureCardTemplate: document.getElementById("gesture-card-template"),
@@ -176,17 +166,99 @@ init();
 function init() {
   bindNavigation();
   bindModal();
+  bindLanguageControl();
   bindDragControls();
   bindVisualControls();
   bindExclusions();
   bindTransferControls();
   bindPreviewCanvas();
 
+  setStatusKey("ui.status.loading");
   loadConfig().then((config) => {
     state.config = mergeConfig(DEFAULT_CONFIG, config);
+    syncLanguage();
+    applyLanguage();
     renderAll();
-    setStatus("保存状態: 読み込み完了");
+    setStatusKey("ui.status.loaded");
   });
+}
+
+function bindLanguageControl() {
+  if (!elements.languageSelect) {
+    return;
+  }
+  elements.languageSelect.addEventListener("change", () => {
+    const next = normalizeLanguage(elements.languageSelect.value) || getDefaultLanguage();
+    if (state.language === next) {
+      return;
+    }
+    state.language = next;
+    state.config.settings.language = next;
+    applyLanguage();
+    renderAll();
+    scheduleSave();
+  });
+}
+
+function syncLanguage() {
+  const language = normalizeLanguage(state.config.settings && state.config.settings.language) || getDefaultLanguage();
+  state.config.settings.language = language;
+  state.language = language;
+}
+
+function applyLanguage() {
+  document.documentElement.lang = state.language;
+  document.title = getText("ui.pageTitle", state.language);
+  if (elements.languageSelect) {
+    elements.languageSelect.value = state.language;
+  }
+  applyI18nToDom();
+  refreshModalActionSelect();
+  updateModalTitle();
+  renderModalPathLabel();
+  setStatusKey(state.statusKey);
+}
+
+function applyI18nToDom() {
+  document.querySelectorAll("[data-i18n]").forEach((element) => {
+    element.textContent = getText(element.dataset.i18n, state.language);
+  });
+  document.querySelectorAll("[data-i18n-placeholder]").forEach((element) => {
+    element.placeholder = getText(element.dataset.i18nPlaceholder, state.language);
+  });
+  document.querySelectorAll("[data-i18n-aria]").forEach((element) => {
+    element.setAttribute("aria-label", getText(element.dataset.i18nAria, state.language));
+  });
+}
+
+function refreshModalActionSelect() {
+  if (!elements.modalAction) {
+    return;
+  }
+  const current = elements.modalAction.value;
+  buildActionSelect(elements.modalAction, NORMAL_ACTION_IDS);
+  if (current) {
+    elements.modalAction.value = current;
+  }
+}
+
+function updateModalTitle() {
+  if (!elements.modalTitle) {
+    return;
+  }
+  const key = state.modal.editingKey ? "ui.modal.titleEdit" : "ui.modal.titleAdd";
+  elements.modalTitle.textContent = getText(key, state.language);
+}
+
+function renderModalPathLabel() {
+  if (!elements.modalPath) {
+    return;
+  }
+  if (recordState.drawing) {
+    elements.modalPath.textContent = getText("ui.modal.recording", state.language);
+    return;
+  }
+  elements.modalPath.textContent = state.modal.path || getText("ui.modal.pathEmpty", state.language);
 }
 
 function bindNavigation() {
@@ -348,10 +420,12 @@ function bindTransferControls() {
       try {
         const imported = JSON.parse(reader.result);
         state.config = mergeConfig(DEFAULT_CONFIG, imported);
+        syncLanguage();
+        applyLanguage();
         scheduleSave(true);
         renderAll();
       } catch (error) {
-        alert("JSONの読み込みに失敗しました。");
+        alert(getText("messages.alert.importFailed", state.language));
       }
     };
     reader.readAsText(file);
@@ -359,10 +433,12 @@ function bindTransferControls() {
   });
 
   elements.resetBtn.addEventListener("click", () => {
-    if (!confirm("設定を初期状態に戻しますか？")) {
+    if (!confirm(getText("messages.confirm.reset", state.language))) {
       return;
     }
     state.config = deepClone(DEFAULT_CONFIG);
+    syncLanguage();
+    applyLanguage();
     scheduleSave(true);
     renderAll();
   });
@@ -428,13 +504,16 @@ function createGestureCard(key, gesture) {
   }
 
   const card = elements.gestureCardTemplate.content.firstElementChild.cloneNode(true);
-  const title = gesture.label || ACTION_LABELS[gesture.action] || "未設定";
-  const meta = ACTION_LABELS[gesture.action] || gesture.action || "";
+  const actionLabel = getActionLabel(gesture.action, state.language);
+  const title = gesture.label || actionLabel || getText("ui.common.unassigned", state.language);
+  const meta = actionLabel || gesture.action || "";
 
   const path = card.querySelector('[data-part="path"]');
   const titleNode = card.querySelector('[data-part="title"]');
   const metaNode = card.querySelector('[data-part="meta"]');
-  if (!path || !titleNode || !metaNode) {
+  const editButton = card.querySelector('[data-action="edit"]');
+  const deleteButton = card.querySelector('[data-action="delete"]');
+  if (!path || !titleNode || !metaNode || !editButton || !deleteButton) {
     throw new Error("gesture-card-template の構造が想定と異なります");
   }
 
@@ -442,8 +521,10 @@ function createGestureCard(key, gesture) {
   titleNode.textContent = title;
   metaNode.textContent = meta;
 
-  card.querySelector('[data-action="edit"]').addEventListener("click", () => openGestureModal(key));
-  card.querySelector('[data-action="delete"]').addEventListener("click", () => removeGesture(key));
+  editButton.textContent = getText("ui.template.edit", state.language);
+  deleteButton.textContent = getText("ui.template.delete", state.language);
+  editButton.addEventListener("click", () => openGestureModal(key));
+  deleteButton.addEventListener("click", () => removeGesture(key));
 
   return card;
 }
@@ -468,8 +549,8 @@ function openGestureModal(editKey) {
   state.modal.editingKey = editKey || null;
   state.modal.path = editKey || "";
   const current = editKey ? state.config.gestures[editKey] : null;
-  elements.modalTitle.textContent = editKey ? "ジェスチャーを編集" : "ジェスチャーを追加";
-  elements.modalPath.textContent = state.modal.path || "未入力";
+  updateModalTitle();
+  renderModalPathLabel();
   elements.modalAction.value = (current && current.action) || NORMAL_ACTION_IDS[0];
   elements.modalLabel.value = (current && current.label) || "";
   elements.modalError.textContent = "";
@@ -487,18 +568,18 @@ function closeGestureModal() {
 function saveGestureFromModal() {
   const path = state.modal.path;
   if (!path) {
-    showModalError("軌跡を描いてください。");
+    showModalError(getText("messages.error.noPath", state.language));
     return;
   }
   const action = elements.modalAction.value;
   if (!action) {
-    showModalError("アクションを選択してください。");
+    showModalError(getText("messages.error.noAction", state.language));
     return;
   }
 
   const duplicate = state.config.gestures[path] && state.modal.editingKey !== path;
   if (duplicate) {
-    showModalError("同じ軌跡が既に登録されています。");
+    showModalError(getText("messages.error.duplicate", state.language));
     return;
   }
   if (state.modal.editingKey && state.modal.editingKey !== path) {
@@ -519,7 +600,7 @@ function showModalError(message) {
 }
 
 function removeGesture(key) {
-  if (!confirm("このジェスチャーを削除しますか？")) {
+  if (!confirm(getText("messages.confirm.deleteGesture", state.language))) {
     return;
   }
   delete state.config.gestures[key];
@@ -534,7 +615,7 @@ function clearGestureCanvas(keepPath) {
   recordState.path = [];
   if (!keepPath) {
     state.modal.path = "";
-    elements.modalPath.textContent = "未入力";
+    renderModalPathLabel();
   }
   const ctx = elements.modalCanvas.getContext("2d");
   ctx.clearRect(0, 0, elements.modalCanvas.width, elements.modalCanvas.height);
@@ -550,7 +631,7 @@ function setupGestureCanvas() {
     recordState.segmentPoint = recordState.lastPoint;
     recordState.path = [];
     state.modal.path = "";
-    elements.modalPath.textContent = "記録中...";
+    renderModalPathLabel();
   });
 
   elements.modalCanvas.addEventListener("pointermove", (event) => {
@@ -581,7 +662,7 @@ function setupGestureCanvas() {
       }
       recordState.drawing = false;
       if (!state.modal.path) {
-        elements.modalPath.textContent = "未入力";
+        renderModalPathLabel();
       }
     });
   });
@@ -631,7 +712,9 @@ function renderDragPads() {
       if (item.center) {
         const center = document.createElement("div");
         center.className = `dir-center ${item.area}`;
-        center.textContent = `${contextLabel(context)}をドラッグ`;
+        center.textContent = getText("ui.section.drag.center", state.language, {
+          context: contextLabel(context)
+        });
         pad.appendChild(center);
         return;
       }
@@ -657,13 +740,13 @@ function renderDragPads() {
 function contextLabel(context) {
   switch (context) {
     case "link":
-      return "リンク";
+      return getText("context.link", state.language);
     case "text":
-      return "テキスト";
+      return getText("context.text", state.language);
     case "image":
-      return "画像";
+      return getText("context.image", state.language);
     default:
-      return "対象";
+      return getText("context.target", state.language);
   }
 }
 
@@ -696,7 +779,7 @@ function renderExclusions() {
     label.textContent = entry;
     const remove = document.createElement("button");
     remove.className = "button ghost";
-    remove.textContent = "削除";
+    remove.textContent = getText("ui.template.delete", state.language);
     remove.addEventListener("click", () => {
       state.config.exclusions = state.config.exclusions.filter((value) => value !== entry);
       scheduleSave(true);
@@ -735,7 +818,7 @@ function buildActionSelect(select, allowedIds) {
   select.replaceChildren();
   const none = document.createElement("option");
   none.value = "";
-  none.textContent = "未設定";
+  none.textContent = getText("ui.common.unassigned", state.language);
   select.appendChild(none);
 
   const grouped = ACTION_CATALOG.filter((action) => allowedIds.includes(action.id)).reduce((map, action) => {
@@ -748,11 +831,11 @@ function buildActionSelect(select, allowedIds) {
 
   Object.keys(grouped).forEach((group) => {
     const optgroup = document.createElement("optgroup");
-    optgroup.label = ACTION_GROUP_LABELS[group] || group;
+    optgroup.label = getActionGroupLabel(group, state.language);
     grouped[group].forEach((action) => {
       const option = document.createElement("option");
       option.value = action.id;
-      option.textContent = action.label;
+      option.textContent = getActionLabel(action.id, state.language);
       optgroup.appendChild(option);
     });
     select.appendChild(optgroup);
@@ -765,7 +848,7 @@ function scheduleSave(force) {
     return;
   }
   // スライダー操作などで連続更新されるので、保存はまとめてI/Oを減らす
-  setStatus("保存状態: 変更中...");
+  setStatusKey("ui.status.saving");
   if (state.saveTimer) {
     clearTimeout(state.saveTimer);
   }
@@ -775,7 +858,7 @@ function scheduleSave(force) {
 function saveConfig() {
   const payload = { [STORAGE_KEY]: state.config };
   chrome.storage.local.set(payload, () => {
-    setStatus("保存状態: 保存しました");
+    setStatusKey("ui.status.saved");
   });
 }
 
@@ -799,8 +882,9 @@ function exportConfig() {
   URL.revokeObjectURL(url);
 }
 
-function setStatus(text) {
-  elements.saveStatus.textContent = text;
+function setStatusKey(key) {
+  state.statusKey = key;
+  elements.saveStatus.textContent = getText(key, state.language);
 }
 
 function updateValue(element, value) {

@@ -12,6 +12,7 @@
     {
       "matches": ["<all_urls>"],
       "js": [
+        "i18n.js",
         "content/constants.js",
         "content/state.js",
         "content/utils.js",
@@ -24,11 +25,17 @@
       "run_at": "document_idle"
     }
   ],
-  "action": {
+  "action": {    
     "default_title": "GestureMaster"
   },
+  
   "options_ui": {
     "page": "options.html",
     "open_in_tab": true
+  },
+  "icons": {
+    "16": "images/MG16.png",
+    "48": "images/MG48.png",
+    "128": "images/MG128.png"
   }
 }

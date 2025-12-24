@@ -1,4 +1,5 @@
 const SETTINGS = {
+  language: DEFAULT_CONFIG.settings.language,
   minDistance: DEFAULT_CONFIG.settings.minDistance,
   cancelRadius: DEFAULT_CONFIG.settings.cancelRadius,
   lineWidth: DEFAULT_CONFIG.settings.lineWidth,

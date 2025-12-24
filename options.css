@@ -463,6 +463,14 @@ h2 {
   border: 1px solid rgba(31, 41, 51, 0.2);
 }
 
+.field select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(31, 41, 51, 0.2);
+  background: white;
+}
+
 .field.range {
   display: grid;
   grid-template-columns: 1fr 1fr auto;

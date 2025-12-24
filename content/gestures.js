@@ -100,12 +100,12 @@ function processMouseMove(x, y) {
   state.segmentY = y;
 
   if (!state.cancelled && state.path.length >= 2) {
-    const backToStart = distanceBetween(state.startX, state.startY, x, y) <= SETTINGS.cancelRadius;
-    if (backToStart) {
-      state.cancelled = true;
-      updatePreviewText("キャンセル");
+      const backToStart = distanceBetween(state.startX, state.startY, x, y) <= SETTINGS.cancelRadius;
+      if (backToStart) {
+        state.cancelled = true;
+        updatePreviewText(getText("preview.cancel", SETTINGS.language));
+      }
     }
-  }
 
   if (state.type === "normal" && state.hasMoved) {
     suppressContextMenu = true;
@@ -265,7 +265,7 @@ function onClick(event) {
 function onKeyDown(event) {
   if (event.key === "Escape" && state.active) {
     state.cancelled = true;
-    updatePreviewText("キャンセル");
+    updatePreviewText(getText("preview.cancel", SETTINGS.language));
   }
 }
 
@@ -341,7 +341,7 @@ function getActionContext() {
 
 // プレビュー表示を更新する
 function updatePreviewText(forcedText) {
-  const text = forcedText || (state.cancelled ? "キャンセル" : getPreviewLabel());
+  const text = forcedText || (state.cancelled ? getText("preview.cancel", SETTINGS.language) : getPreviewLabel());
   overlay.setPreviewText(text);
 }
 

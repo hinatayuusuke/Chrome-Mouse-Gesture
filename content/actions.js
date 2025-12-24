@@ -102,7 +102,9 @@ function buildActionMap(source) {
     if (!def) {
       return;
     }
-    const label = typeof gesture.label === "string" && gesture.label.trim() ? gesture.label.trim() : def.label;
+    const label = typeof gesture.label === "string" && gesture.label.trim()
+      ? gesture.label.trim()
+      : getActionLabel(gesture.action, SETTINGS.language);
     map.normal[key] = { label, action: def.action };
   });
 
@@ -116,7 +118,7 @@ function buildActionMap(source) {
       if (!def) {
         return;
       }
-      map[context][dir] = { label: def.label, action: def.action };
+      map[context][dir] = { label: getActionLabel(actionKey, SETTINGS.language), action: def.action };
     });
   });
 
