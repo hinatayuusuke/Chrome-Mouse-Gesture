@@ -16,18 +16,30 @@ chrome.runtime.onMessage.addListener((message, sender) => {
       break;
     }
     case "newTab": {
-      chrome.tabs.create({
+      const createProps = {
         url: message.url || "chrome://newtab",
         active: message.active !== false
-      });
+      };
+      // 呼び出し元がタブなら、その右隣に開き、親子関係を持たせる
+      if (sender.tab && typeof sender.tab.id === "number") {
+        createProps.openerTabId = sender.tab.id;
+        createProps.index = sender.tab.index + 1;
+      }
+      chrome.tabs.create(createProps);
       break;
     }
     case "openTab": {
       if (typeof message.url === "string" && message.url) {
-        chrome.tabs.create({
+        const createProps = {
           url: message.url,
           active: message.active !== false
-        });
+        };
+        // 呼び出し元タブIDを指定することで、YouTube等のフォーカス奪還に対抗する
+        if (sender.tab && typeof sender.tab.id === "number") {
+          createProps.openerTabId = sender.tab.id;
+          createProps.index = sender.tab.index + 1;
+        }
+        chrome.tabs.create(createProps);
       }
       break;
     }
