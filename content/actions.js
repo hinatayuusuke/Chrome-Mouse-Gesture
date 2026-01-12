@@ -36,6 +36,44 @@ function executeAction(type, key, context) {
     case "moveTabRight":
       sendMessage({ type: "moveTab", direction: "right" });
       return true;
+    case "moveTabFirst":
+      sendMessage({ type: "moveTabFirst" });
+      return true;
+    case "moveTabLast":
+      sendMessage({ type: "moveTabLast" });
+      return true;
+    case "pinTab":
+      sendMessage({ type: "pinTab" });
+      return true;
+    case "unpinTab":
+      sendMessage({ type: "unpinTab" });
+      return true;
+    case "duplicateTab":
+      sendMessage({ type: "duplicateTab" });
+      return true;
+    case "muteTab":
+      sendMessage({ type: "muteTab" });
+      return true;
+    case "unmuteTab":
+      sendMessage({ type: "unmuteTab" });
+      return true;
+    case "moveTabToNewWindow":
+      sendMessage({ type: "moveTabToNewWindow" });
+      return true;
+    case "openTabIncognitoWindow": {
+      const url = window.location && window.location.href;
+      if (typeof url === "string" && url) {
+        sendMessage({ type: "openTabIncognitoWindow", url });
+        return true;
+      }
+      return false;
+    }
+    case "windowMaximize":
+      sendMessage({ type: "windowMaximize" });
+      return true;
+    case "windowMinimize":
+      sendMessage({ type: "windowMinimize" });
+      return true;
     case "openLink":
       if (context.linkUrl) {
         sendMessage({ type: "openTab", url: context.linkUrl, active: action.active });

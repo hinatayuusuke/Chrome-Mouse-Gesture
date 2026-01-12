@@ -26,7 +26,18 @@ const DEFAULT_CONFIG = {
     DU: { action: "reopenTab", label: "" },
     RU: { action: "newTab", label: "" },
     UR: { action: "moveTabRight", label: "" },
-    UL: { action: "moveTabLeft", label: "" }
+    UL: { action: "moveTabLeft", label: "" },
+    LD: { action: "moveTabFirst", label: "" },
+    RD: { action: "moveTabLast", label: "" },
+    LR: { action: "pinTab", label: "" },
+    RL: { action: "unpinTab", label: "" },
+    DL: { action: "duplicateTab", label: "" },
+    UDL: { action: "muteTab", label: "" },
+    UDR: { action: "unmuteTab", label: "" },
+    LUR: { action: "moveTabToNewWindow", label: "" },
+    RUL: { action: "openTabIncognitoWindow", label: "" },
+    URD: { action: "windowMaximize", label: "" },
+    ULD: { action: "windowMinimize", label: "" }
   },
   dragGestures: {
     link: {
@@ -59,6 +70,17 @@ const ACTION_CATALOG = [
   { id: "newTab", group: "tab" },
   { id: "moveTabLeft", group: "tab" },
   { id: "moveTabRight", group: "tab" },
+  { id: "moveTabFirst", group: "tab" },
+  { id: "moveTabLast", group: "tab" },
+  { id: "pinTab", group: "tab" },
+  { id: "unpinTab", group: "tab" },
+  { id: "duplicateTab", group: "tab" },
+  { id: "muteTab", group: "tab" },
+  { id: "unmuteTab", group: "tab" },
+  { id: "moveTabToNewWindow", group: "window" },
+  { id: "openTabIncognitoWindow", group: "window" },
+  { id: "windowMaximize", group: "window" },
+  { id: "windowMinimize", group: "window" },
   { id: "openLinkActive", group: "link" },
   { id: "openLinkBackground", group: "link" },
   { id: "openLinkIncognito", group: "link" },
@@ -82,7 +104,18 @@ const NORMAL_ACTION_IDS = [
   "reopenTab",
   "newTab",
   "moveTabLeft",
-  "moveTabRight"
+  "moveTabRight",
+  "moveTabFirst",
+  "moveTabLast",
+  "pinTab",
+  "unpinTab",
+  "duplicateTab",
+  "muteTab",
+  "unmuteTab",
+  "moveTabToNewWindow",
+  "openTabIncognitoWindow",
+  "windowMaximize",
+  "windowMinimize"
 ];
 
 const DRAG_ACTION_IDS = {
