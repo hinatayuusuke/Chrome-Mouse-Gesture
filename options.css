@@ -655,11 +655,6 @@ h2 {
   touch-action: none;
 }
 
-.recording-actions {
-  display: flex;
-  justify-content: flex-end;
-}
-
 .form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));

@@ -178,7 +178,6 @@ const elements = {
   modalLabel: document.getElementById("gesture-label"),
   modalError: document.getElementById("gesture-error"),
   modalSave: document.getElementById("gesture-save"),
-  modalClear: document.getElementById("gesture-clear"),
   modalCanvas: document.getElementById("gesture-canvas")
 };
 
@@ -315,7 +314,6 @@ function bindModal() {
   });
 
   elements.modalSave.addEventListener("click", saveGestureFromModal);
-  elements.modalClear.addEventListener("click", clearGestureCanvas);
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && state.modal.open) {
