@@ -554,8 +554,12 @@ function createGestureCard(key, gesture) {
   titleNode.textContent = title;
   metaNode.textContent = meta;
 
-  editButton.textContent = getText("ui.template.edit", state.language);
-  deleteButton.textContent = getText("ui.template.delete", state.language);
+  const editLabel = getText("ui.template.edit", state.language);
+  const deleteLabel = getText("ui.template.delete", state.language);
+  editButton.setAttribute("aria-label", editLabel);
+  editButton.setAttribute("title", editLabel);
+  deleteButton.setAttribute("aria-label", deleteLabel);
+  deleteButton.setAttribute("title", deleteLabel);
   editButton.addEventListener("click", () => openGestureModal(key));
   deleteButton.addEventListener("click", () => removeGesture(key));
 
