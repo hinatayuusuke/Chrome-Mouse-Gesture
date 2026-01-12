@@ -126,6 +126,16 @@ chrome.runtime.onMessage.addListener((message, sender) => {
   }
 });
 
+chrome.commands.onCommand.addListener((command) => {
+  if (command === "open-options") {
+    chrome.runtime.openOptionsPage();
+  }
+});
+
+chrome.action.onClicked.addListener(() => {
+  chrome.runtime.openOptionsPage();
+});
+
 function openUrlInIncognitoWindow(url, focus) {
   // 既存のシークレットウィンドウを優先して使い、増殖を避ける
   chrome.windows.getAll({}, (windows) => {

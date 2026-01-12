@@ -28,6 +28,11 @@
   "action": {    
     "default_title": "GestureMaster"
   },
+  "commands": {
+    "open-options": {
+      "description": "Open GestureMaster options"
+    }
+  },
   
   "options_ui": {
     "page": "options.html",
