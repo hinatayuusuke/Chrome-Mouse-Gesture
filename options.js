@@ -301,6 +301,10 @@ function bindNavigation() {
       elements.sections.forEach((section) => {
         section.classList.toggle("is-active", section.id === item.dataset.target);
       });
+      if (item.dataset.target === "section-visual" && elements.trailPreview) {
+        resizeCanvas(elements.trailPreview);
+        refreshPreview();
+      }
     });
   });
 
