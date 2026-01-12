@@ -26,7 +26,18 @@ const DEFAULT_CONFIG = {
     DU: { action: "reopenTab", label: "" },
     RU: { action: "newTab", label: "" },
     UR: { action: "moveTabRight", label: "" },
-    UL: { action: "moveTabLeft", label: "" }
+    UL: { action: "moveTabLeft", label: "" },
+    LD: { action: "moveTabFirst", label: "" },
+    RD: { action: "moveTabLast", label: "" },
+    LR: { action: "pinTab", label: "" },
+    RL: { action: "unpinTab", label: "" },
+    DL: { action: "duplicateTab", label: "" },
+    UDL: { action: "muteTab", label: "" },
+    UDR: { action: "unmuteTab", label: "" },
+    LUR: { action: "moveTabToNewWindow", label: "" },
+    RUL: { action: "openTabIncognitoWindow", label: "" },
+    URD: { action: "windowMaximize", label: "" },
+    ULD: { action: "windowMinimize", label: "" }
   },
   dragGestures: {
     link: {
@@ -59,6 +70,17 @@ const ACTION_CATALOG = [
   { id: "newTab", group: "tab" },
   { id: "moveTabLeft", group: "tab" },
   { id: "moveTabRight", group: "tab" },
+  { id: "moveTabFirst", group: "tab" },
+  { id: "moveTabLast", group: "tab" },
+  { id: "pinTab", group: "tab" },
+  { id: "unpinTab", group: "tab" },
+  { id: "duplicateTab", group: "tab" },
+  { id: "muteTab", group: "tab" },
+  { id: "unmuteTab", group: "tab" },
+  { id: "moveTabToNewWindow", group: "window" },
+  { id: "openTabIncognitoWindow", group: "window" },
+  { id: "windowMaximize", group: "window" },
+  { id: "windowMinimize", group: "window" },
   { id: "openLinkActive", group: "link" },
   { id: "openLinkBackground", group: "link" },
   { id: "openLinkIncognito", group: "link" },
@@ -82,7 +104,18 @@ const NORMAL_ACTION_IDS = [
   "reopenTab",
   "newTab",
   "moveTabLeft",
-  "moveTabRight"
+  "moveTabRight",
+  "moveTabFirst",
+  "moveTabLast",
+  "pinTab",
+  "unpinTab",
+  "duplicateTab",
+  "muteTab",
+  "unmuteTab",
+  "moveTabToNewWindow",
+  "openTabIncognitoWindow",
+  "windowMaximize",
+  "windowMinimize"
 ];
 
 const DRAG_ACTION_IDS = {
@@ -145,7 +178,6 @@ const elements = {
   modalLabel: document.getElementById("gesture-label"),
   modalError: document.getElementById("gesture-error"),
   modalSave: document.getElementById("gesture-save"),
-  modalClear: document.getElementById("gesture-clear"),
   modalCanvas: document.getElementById("gesture-canvas")
 };
 
@@ -269,6 +301,10 @@ function bindNavigation() {
       elements.sections.forEach((section) => {
         section.classList.toggle("is-active", section.id === item.dataset.target);
       });
+      if (item.dataset.target === "section-visual" && elements.trailPreview) {
+        resizeCanvas(elements.trailPreview);
+        refreshPreview();
+      }
     });
   });
 
@@ -282,7 +318,6 @@ function bindModal() {
   });
 
   elements.modalSave.addEventListener("click", saveGestureFromModal);
-  elements.modalClear.addEventListener("click", clearGestureCanvas);
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && state.modal.open) {
@@ -521,8 +556,12 @@ function createGestureCard(key, gesture) {
   titleNode.textContent = title;
   metaNode.textContent = meta;
 
-  editButton.textContent = getText("ui.template.edit", state.language);
-  deleteButton.textContent = getText("ui.template.delete", state.language);
+  const editLabel = getText("ui.template.edit", state.language);
+  const deleteLabel = getText("ui.template.delete", state.language);
+  editButton.setAttribute("aria-label", editLabel);
+  editButton.setAttribute("title", editLabel);
+  deleteButton.setAttribute("aria-label", deleteLabel);
+  deleteButton.setAttribute("title", deleteLabel);
   editButton.addEventListener("click", () => openGestureModal(key));
   deleteButton.addEventListener("click", () => removeGesture(key));
 

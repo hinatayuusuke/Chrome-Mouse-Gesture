@@ -55,9 +55,85 @@ chrome.runtime.onMessage.addListener((message, sender) => {
       }
       break;
     }
+    case "moveTabFirst": {
+      if (sender.tab) {
+        moveTabToEdge(sender.tab, "start");
+      }
+      break;
+    }
+    case "moveTabLast": {
+      if (sender.tab) {
+        moveTabToEdge(sender.tab, "end");
+      }
+      break;
+    }
+    case "pinTab": {
+      if (sender.tab && typeof sender.tab.id === "number") {
+        chrome.tabs.update(sender.tab.id, { pinned: true });
+      }
+      break;
+    }
+    case "unpinTab": {
+      if (sender.tab && typeof sender.tab.id === "number") {
+        chrome.tabs.update(sender.tab.id, { pinned: false });
+      }
+      break;
+    }
+    case "duplicateTab": {
+      if (sender.tab && typeof sender.tab.id === "number") {
+        chrome.tabs.duplicate(sender.tab.id);
+      }
+      break;
+    }
+    case "muteTab": {
+      if (sender.tab && typeof sender.tab.id === "number") {
+        chrome.tabs.update(sender.tab.id, { muted: true });
+      }
+      break;
+    }
+    case "unmuteTab": {
+      if (sender.tab && typeof sender.tab.id === "number") {
+        chrome.tabs.update(sender.tab.id, { muted: false });
+      }
+      break;
+    }
+    case "moveTabToNewWindow": {
+      if (sender.tab && typeof sender.tab.id === "number") {
+        chrome.windows.create({ tabId: sender.tab.id });
+      }
+      break;
+    }
+    case "openTabIncognitoWindow": {
+      if (typeof message.url === "string" && message.url) {
+        openUrlInNewIncognitoWindow(message.url, message.active !== false);
+      }
+      break;
+    }
+    case "windowMaximize": {
+      if (sender.tab && typeof sender.tab.windowId === "number") {
+        chrome.windows.update(sender.tab.windowId, { state: "maximized" });
+      }
+      break;
+    }
+    case "windowMinimize": {
+      if (sender.tab && typeof sender.tab.windowId === "number") {
+        chrome.windows.update(sender.tab.windowId, { state: "minimized" });
+      }
+      break;
+    }
     default:
       break;
   }
+});
+
+chrome.commands.onCommand.addListener((command) => {
+  if (command === "open-options") {
+    chrome.runtime.openOptionsPage();
+  }
+});
+
+chrome.action.onClicked.addListener(() => {
+  chrome.runtime.openOptionsPage();
 });
 
 function openUrlInIncognitoWindow(url, focus) {
@@ -106,5 +182,40 @@ function moveTabInWindow(tab, direction) {
     }
 
     chrome.tabs.move(tab.id, { index: newIndex });
+  });
+}
+
+function moveTabToEdge(tab, edge) {
+  if (
+    typeof tab.id !== "number" ||
+    typeof tab.index !== "number" ||
+    typeof tab.windowId !== "number"
+  ) {
+    return;
+  }
+
+  if (edge !== "start" && edge !== "end") {
+    return;
+  }
+
+  chrome.tabs.query({ windowId: tab.windowId }, (tabs) => {
+    if (!Array.isArray(tabs) || tabs.length === 0) {
+      return;
+    }
+
+    const targetIndex = edge === "start" ? 0 : tabs.length - 1;
+    if (tab.index === targetIndex) {
+      return;
+    }
+
+    chrome.tabs.move(tab.id, { index: targetIndex });
+  });
+}
+
+function openUrlInNewIncognitoWindow(url, focus) {
+  chrome.windows.create({ url, incognito: true, focused: focus }, () => {
+    if (chrome.runtime.lastError) {
+      console.warn("Failed to open incognito window:", chrome.runtime.lastError.message);
+    }
   });
 }
