@@ -20,6 +20,7 @@ const state = {
   active: false,
   type: null,
   button: null,
+  originTarget: null,
   startX: 0,
   startY: 0,
   lastX: 0,

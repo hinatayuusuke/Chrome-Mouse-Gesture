@@ -281,6 +281,7 @@ function startGesture(type, event, context) {
   state.active = true;
   state.type = type;
   state.button = typeof event.button === "number" ? event.button : 0;
+  state.originTarget = event.target || null;
   state.startX = event.clientX;
   state.startY = event.clientY;
   state.lastX = event.clientX;
@@ -309,6 +310,7 @@ function endGesture() {
   state.active = false;
   state.type = null;
   state.button = null;
+  state.originTarget = null;
   state.path = [];
   state.linkUrl = "";
   state.linkText = "";
@@ -332,6 +334,7 @@ function endGesture() {
 
 function getActionContext() {
   return {
+    originTarget: state.originTarget,
     linkUrl: state.linkUrl,
     linkText: state.linkText,
     selectionText: state.selectionText,

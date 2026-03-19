@@ -75,6 +75,71 @@ function getSelectionText() {
   return selection ? selection.toString().trim() : "";
 }
 
+function getTargetElement(target) {
+  if (target instanceof Element) {
+    return target;
+  }
+
+  if (!(target instanceof Node)) {
+    return null;
+  }
+
+  let current = target.parentNode;
+  while (current) {
+    if (current instanceof Element) {
+      return current;
+    }
+    if (current instanceof ShadowRoot) {
+      return current.host;
+    }
+    current = current.parentNode;
+  }
+
+  return null;
+}
+
+function getParentElement(element) {
+  if (!(element instanceof Element)) {
+    return null;
+  }
+
+  if (element.parentElement) {
+    return element.parentElement;
+  }
+
+  const root = element.getRootNode ? element.getRootNode() : null;
+  return root instanceof ShadowRoot ? root.host : null;
+}
+
+function isScrollableElement(element) {
+  if (!(element instanceof HTMLElement)) {
+    return false;
+  }
+
+  if (element === document.body || element === document.documentElement) {
+    return false;
+  }
+
+  if (element.scrollHeight <= element.clientHeight) {
+    return false;
+  }
+
+  const style = window.getComputedStyle(element);
+  return ["auto", "scroll", "overlay"].includes(style.overflowY);
+}
+
+function findScrollableAncestor(target) {
+  let current = getTargetElement(target);
+  while (current) {
+    if (isScrollableElement(current)) {
+      return current;
+    }
+    current = getParentElement(current);
+  }
+
+  return null;
+}
+
 function getDocumentBottom() {
   return Math.max(
     document.body.scrollHeight,

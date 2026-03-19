@@ -5,6 +5,7 @@ function executeAction(type, key, context) {
   }
 
   const action = entry.action;
+  const scrollTarget = findScrollableAncestor(context.originTarget);
   switch (action.type) {
     case "historyBack":
       window.history.back();
@@ -16,9 +17,17 @@ function executeAction(type, key, context) {
       window.location.reload();
       return true;
     case "scrollTop":
+      if (scrollTarget) {
+        scrollTarget.scrollTo({ top: 0, behavior: "smooth" });
+        return true;
+      }
       window.scrollTo({ top: 0, behavior: "smooth" });
       return true;
     case "scrollBottom":
+      if (scrollTarget) {
+        scrollTarget.scrollTo({ top: scrollTarget.scrollHeight, behavior: "smooth" });
+        return true;
+      }
       window.scrollTo({ top: getDocumentBottom(), behavior: "smooth" });
       return true;
     case "closeTab":
