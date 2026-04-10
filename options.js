@@ -955,8 +955,19 @@ function mergeConfig(defaults, stored) {
   if (!stored || typeof stored !== "object") {
     return deepClone(defaults);
   }
-  const merged = deepClone(defaults);
-  return mergeDeep(merged, stored);
+  return {
+    settings: mergeDeep(deepClone(defaults.settings), stored.settings || {}),
+    // WHY: Gesture maps need replace semantics so deleted default entries do not reappear on reload.
+    gestures: stored.gestures && typeof stored.gestures === "object"
+      ? deepClone(stored.gestures)
+      : deepClone(defaults.gestures),
+    dragGestures: stored.dragGestures && typeof stored.dragGestures === "object"
+      ? deepClone(stored.dragGestures)
+      : deepClone(defaults.dragGestures),
+    exclusions: Array.isArray(stored.exclusions)
+      ? stored.exclusions.slice()
+      : deepClone(defaults.exclusions)
+  };
 }
 
 function mergeDeep(target, source) {
