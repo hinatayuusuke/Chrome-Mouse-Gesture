@@ -481,7 +481,11 @@ function bindTransferControls() {
 
 function bindPreviewCanvas() {
   resizeCanvas(elements.trailPreview);
-  window.addEventListener("resize", () => resizeCanvas(elements.trailPreview));
+  window.addEventListener("resize", () => {
+    // WHY: Resizing a canvas clears its bitmap, so zoom-triggered resizes must redraw the preview immediately.
+    resizeCanvas(elements.trailPreview);
+    refreshPreview();
+  });
 
   elements.trailPreview.addEventListener("pointerdown", (event) => {
     previewState.drawing = true;
